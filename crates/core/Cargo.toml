@@ -14,3 +14,5 @@ thiserror.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 uuid.workspace = true
+
+device = { path = "../device" }

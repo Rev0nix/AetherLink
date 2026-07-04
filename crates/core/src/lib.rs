@@ -1,13 +1,8 @@
-pub mod app;
-pub mod config;
-pub mod error;
+pub mod api;
+pub mod device_manager;
 pub mod event;
-pub mod logging;
-pub mod service;
 pub mod state;
-pub mod registry;
 
-
-pub use app::Application;
+pub use api::CoreApi;
+pub use device_manager::DeviceManager;
 pub use state::AppState;
-pub use registry::ServiceRegistry;
