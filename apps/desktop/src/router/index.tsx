@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import DeviceDetails from "../pages/DeviceDetails";
 
 import Dashboard from "../pages/Dashboard";
 import Devices from "../pages/Devices";
@@ -13,6 +14,10 @@ export const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
+      {
+        path: "device/:id",
+        element: <DeviceDetails />,
+      },
       {
         index: true,
         element: <Dashboard />,

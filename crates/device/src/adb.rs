@@ -9,9 +9,7 @@ fn adb_shell(serial: &str, command: &[&str]) -> String {
         .output()
         .expect("Failed to execute adb");
 
-    String::from_utf8_lossy(&output.stdout)
-        .trim()
-        .to_string()
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
 pub fn list_devices() -> Vec<String> {
@@ -67,13 +65,13 @@ pub fn battery(serial: &str) -> u8 {
 }
 
 use crate::{Device, Platform};
-use uuid::Uuid;
+
 
 pub fn discover_devices() -> Vec<Device> {
     list_devices()
         .into_iter()
         .map(|serial| Device {
-            id: Uuid::new_v4(),
+            id: serial.clone(),
             name: model(&serial),
             platform: Platform::Android,
             battery: battery(&serial),
@@ -82,6 +80,27 @@ pub fn discover_devices() -> Vec<Device> {
         .collect()
 }
 
+pub fn list_files(serial: &str, path: &str) -> Vec<String> {
+    let output = adb_shell(serial, &["ls", path]);
+
+    output
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.is_empty())
+        .collect()
+}
+
+use crate::DeviceInfo;
+
+pub fn device_info(serial: &str) -> DeviceInfo {
+    DeviceInfo {
+        serial: serial.to_string(),
+        manufacturer: manufacturer(serial),
+        model: model(serial),
+        android_version: android_version(serial),
+        battery: battery(serial),
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -99,5 +118,16 @@ mod tests {
             println!("Battery");
             println!("{}", battery(&serial));
         }
+    }
+}
+
+#[test]
+fn list_downloads() {
+    let devices = list_devices();
+
+    if let Some(serial) = devices.first() {
+        let files = list_files(serial, "/sdcard/Download");
+
+        println!("{:#?}", files);
     }
 }

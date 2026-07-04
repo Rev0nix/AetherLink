@@ -6,8 +6,14 @@ export default function Dashboard() {
   const { devices, loadDevices } = useAppStore();
 
   useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
+    void loadDevices();
+
+    const timer = setInterval(() => {
+      void loadDevices();
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   console.log("Dashboard devices:", devices);
 
@@ -29,7 +35,7 @@ export default function Dashboard() {
       >
         Refresh Devices
       </button>
-      
+
       <p className="text-lg font-semibold">
         Connected Devices: {devices.length}
       </p>

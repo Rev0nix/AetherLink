@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Platform {
@@ -11,7 +10,7 @@ pub enum Platform {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Device {
-    pub id: Uuid,
+    pub id: String,
     pub name: String,
     pub platform: Platform,
     pub battery: u8,
@@ -20,13 +19,14 @@ pub struct Device {
 
 impl Device {
     pub fn new(
+        id: String,
         name: String,
         platform: Platform,
         battery: u8,
         connected: bool,
     ) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             name,
             platform,
             battery,

@@ -1,7 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use uuid::Uuid;
-
 use crate::{
     device::Device,
     state::DeviceState,
@@ -25,15 +23,15 @@ impl DeviceManager {
             .write()
             .unwrap()
             .devices
-            .insert(device.id, device);
+            .insert(device.id.clone(), device);
     }
 
-    pub fn remove(&self, id: Uuid) {
+    pub fn remove(&self, id: &str) {
         self.state
             .write()
             .unwrap()
             .devices
-            .remove(&id);
+            .remove(id);
     }
 
     pub fn devices(&self) -> Vec<Device> {
