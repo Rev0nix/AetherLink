@@ -14,14 +14,14 @@ export default function DeviceCard({ device }: Props) {
         marginBottom: "12px",
       }}
     >
-      <h2>{device.name}</h2>
+      <h2 className="text-xl font-bold">{device.name}</h2>
 
       <p>Platform: {device.platform}</p>
 
       <p>Battery: {device.battery}%</p>
 
       <p>
-        Status: {device.connected ? "🟢 Connected" : "⚪ Offline"}
+        {device.connected ? "🟢 Connected" : "⚪ Offline"}
       </p>
     </div>
   );

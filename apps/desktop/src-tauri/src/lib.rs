@@ -1,32 +1,20 @@
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct Device {
-    id: String,
-    name: String,
-    platform: String,
-    battery: u8,
-    connected: bool,
-}
+use device::Device;
+use device::DeviceService;
 
 #[tauri::command]
 fn get_devices() -> Vec<Device> {
-    vec![
-        Device {
-            id: "pixel-8".into(),
-            name: "Google Pixel 8 Pro".into(),
-            platform: "Android".into(),
-            battery: 87,
-            connected: true,
-        },
-        Device {
-            id: "s24".into(),
-            name: "Samsung Galaxy S24".into(),
-            platform: "Android".into(),
-            battery: 63,
-            connected: false,
-        },
-    ]
+    let devices = DeviceService::discover();
+
+    println!("==============================");
+    println!("Found {} devices", devices.len());
+
+    for d in &devices {
+        println!("{:?}", d);
+    }
+
+    println!("==============================");
+
+    devices
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

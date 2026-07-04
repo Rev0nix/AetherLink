@@ -1,3 +1,4 @@
+import { getDevices } from "../services/tauri";
 import { create } from "zustand";
 import type { Device } from "../types/device";
 
@@ -10,7 +11,14 @@ export const useAppStore = create<AppState>((set) => ({
   devices: [],
 
   loadDevices: async () => {
-    const devices = await getDevices();
-    set({ devices });
+    try {
+      const devices = await getDevices();
+
+      console.log("Devices from backend:", devices);
+
+      set({ devices });
+    } catch (err) {
+      console.error("Error loading devices:", err);
+    }
   },
 }));

@@ -9,6 +9,8 @@ export default function Dashboard() {
     loadDevices();
   }, [loadDevices]);
 
+  console.log("Dashboard devices:", devices);
+
   return (
     <div className="space-y-8">
       <div>
@@ -20,6 +22,17 @@ export default function Dashboard() {
           Connected Android Devices
         </p>
       </div>
+
+      <button
+        onClick={loadDevices}
+        className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+      >
+        Refresh Devices
+      </button>
+      
+      <p className="text-lg font-semibold">
+        Connected Devices: {devices.length}
+      </p>
 
       <div className="space-y-4">
         {devices.map((device) => (
