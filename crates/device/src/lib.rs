@@ -6,6 +6,7 @@ pub mod manager;
 pub mod pairing;
 pub mod service;
 pub mod state;
+pub mod adb;
 
 pub use device::{Device, Platform};
 pub use manager::DeviceManager;
