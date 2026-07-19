@@ -1,8 +1,11 @@
+import { useNavigate } from "react-router-dom";
+
 interface Props {
   onBrowseFiles: () => void;
 }
 
 export default function DeviceActions({ onBrowseFiles }: Props) {
+  const navigate = useNavigate();
   return (
     <div className="grid gap-4">
       <button onClick={onBrowseFiles}>

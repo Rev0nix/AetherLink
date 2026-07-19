@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import DeviceDetails from "../pages/DeviceDetails";
-
+import FileExplorer from "../pages/FileExplorer";
 import Dashboard from "../pages/Dashboard";
 import Devices from "../pages/Devices";
 import Clipboard from "../pages/Clipboard";
@@ -37,6 +37,10 @@ export const router = createBrowserRouter([
       {
         path: "settings",
         element: <Settings />,
+      },
+      {
+        path: "files",
+        element: <FileExplorer />,
       },
     ],
   },

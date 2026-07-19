@@ -3,10 +3,11 @@ import { useParams } from "react-router-dom";
 import { getDeviceInfo, type DeviceInfo } from "../services/tauri";
 import { useAppStore } from "../store/appStore";
 import DeviceActions from "../components/device/DeviceActions";
+import { useNavigate } from "react-router-dom";
 
 export default function DeviceDetails() {
   const { id } = useParams();
-
+  const navigate = useNavigate();
   const device = useAppStore((state) =>
     state.devices.find((d) => d.id === id)
   );
@@ -55,7 +56,8 @@ export default function DeviceDetails() {
 
       <DeviceActions
         onBrowseFiles={() => {
-          console.log("Browse Files clicked");
+          console.log("Browse clicked");
+          navigate("/files");
         }}
       />
     </div>

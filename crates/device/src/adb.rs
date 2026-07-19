@@ -1,3 +1,4 @@
+use crate::PhoneFile;
 use std::process::Command;
 
 fn adb_shell(serial: &str, command: &[&str]) -> String {
@@ -66,7 +67,6 @@ pub fn battery(serial: &str) -> u8 {
 
 use crate::{Device, Platform};
 
-
 pub fn discover_devices() -> Vec<Device> {
     list_devices()
         .into_iter()
@@ -80,14 +80,67 @@ pub fn discover_devices() -> Vec<Device> {
         .collect()
 }
 
-pub fn list_files(serial: &str, path: &str) -> Vec<String> {
-    let output = adb_shell(serial, &["ls", path]);
+pub fn list_files(serial: &str, path: &str) -> Vec<PhoneFile> {
+    let output = adb_shell(serial, &["sh", "-c", &format!("ls -Ap \"{}\"", path)]);
 
     output
         .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.is_empty())
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let name = line.trim();
+
+            PhoneFile {
+                name: name.trim_end_matches('/').to_string(),
+                path: format!("{}/{}", path, name.trim_end_matches('/')),
+                is_directory: name.ends_with('/'),
+                size: 0,
+            }
+        })
         .collect()
+}
+pub fn upload_file(serial: &str, local: &str, remote: &str) {
+    Command::new("adb")
+        .arg("-s")
+        .arg(serial)
+        .arg("push")
+        .arg(local)
+        .arg(remote)
+        .status()
+        .expect("Failed to upload file");
+}
+
+pub fn download_file(serial: &str, remote: &str, local: &str) {
+    Command::new("adb")
+        .arg("-s")
+        .arg(serial)
+        .arg("pull")
+        .arg(remote)
+        .arg(local)
+        .status()
+        .expect("Failed to download file");
+}
+
+pub fn delete_file(serial: &str, path: &str) {
+    Command::new("adb")
+        .arg("-s")
+        .arg(serial)
+        .arg("shell")
+        .arg("rm")
+        .arg(path)
+        .status()
+        .expect("Failed to delete file");
+}
+
+pub fn rename_file(serial: &str, old: &str, new: &str) {
+    Command::new("adb")
+        .arg("-s")
+        .arg(serial)
+        .arg("shell")
+        .arg("mv")
+        .arg(old)
+        .arg(new)
+        .status()
+        .expect("Failed to rename file");
 }
 
 use crate::DeviceInfo;
@@ -123,6 +176,17 @@ mod tests {
 
 #[test]
 fn list_downloads() {
+    let devices = list_devices();
+
+    if let Some(serial) = devices.first() {
+        let files = list_files(serial, "/sdcard/Download");
+
+        println!("{:#?}", files);
+    }
+}
+
+#[test]
+fn test_list_download_folder() {
     let devices = list_devices();
 
     if let Some(serial) = devices.first() {
