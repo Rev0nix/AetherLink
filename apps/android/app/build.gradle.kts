@@ -1,5 +1,3 @@
-// Top-level build file
-
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
