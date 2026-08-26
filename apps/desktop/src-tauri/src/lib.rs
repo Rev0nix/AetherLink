@@ -1,4 +1,5 @@
 mod commands;
+mod network;
 
 use commands::device::*;
 
@@ -14,6 +15,11 @@ fn upload_phone_file(serial: String, local: String, remote: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    
+    std::thread::spawn(|| {
+        network::tcp_server::start_server();
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![

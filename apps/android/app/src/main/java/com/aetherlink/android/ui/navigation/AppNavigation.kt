@@ -5,6 +5,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aetherlink.android.ui.screens.HomeScreen
+import com.aetherlink.android.ui.screens.DevicesScreen
+import com.aetherlink.android.ui.screens.SettingsScreen
+import com.aetherlink.android.ui.screens.PairingScreen
 
 @Composable
 fun AppNavigation() {
@@ -13,11 +16,23 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = Screen.Home.route
     ) {
 
-        composable("home") {
+        composable(Screen.Home.route) {
             HomeScreen()
+        }
+
+        composable(Screen.Devices.route) {
+            DevicesScreen()
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen()
+        }
+
+        composable(Screen.Pairing.route) {
+            PairingScreen()
         }
     }
 }

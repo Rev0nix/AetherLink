@@ -1,0 +1,10 @@
+- [x] Update `libs.versions.toml`
+    - [x] Rename plugin keys (e.g., `kotlin-android` -> `kotlinAndroid`)
+    - [x] Add `kotlinx-serialization-json` version and library
+- [x] Update root `build.gradle.kts` plugins
+- [x] Update `:app` `build.gradle.kts`
+    - [x] Update plugins block
+    - [x] Update `compileSdk` and `targetSdk` to 35
+    - [x] Update dependencies to use version catalog and remove redundancy
+- [x] Verify build (Sync successful, build has environment issues)
+- [x] Create walkthrough
