@@ -37,7 +37,7 @@ object UpdateManager {
     private const val PREFS_NAME = "aetherlink_prefs"
     private const val KEY_DISMISSED_VERSION = "dismissed_update_version"
 
-    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.9/1-AetherLink-Android.apk"
+    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.0/VEXYRON-Android.apk"
     const val FALLBACK_RELEASE_URL = "https://github.com/Rev0nix/AetherLink/releases/latest"
 
     var isChecking by mutableStateOf(false)
@@ -123,7 +123,7 @@ object UpdateManager {
                         releaseUrl = htmlUrl,
                         publishedAt = publishedAt,
                         apkDownloadUrl = matchedApkUrl ?: FALLBACK_APK_URL,
-                        apkName = matchedApkName ?: "1-AetherLink-Android.apk",
+                        apkName = matchedApkName ?: "VEXYRON-Android.apk",
                         apkSize = matchedApkSize
                     )
 

@@ -51,7 +51,7 @@ function isNewerVersion(latest: string, current: string): boolean {
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
-  currentVersion: "2.2.9",
+  currentVersion: "2.3.0",
   latestVersion: null,
   isUpdateAvailable: false,
   isChecking: false,
@@ -96,7 +96,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
       const updateInfo: UpdateInfo = {
         version: latestVersion,
-        title: data.name || `AetherLink v${latestVersion}`,
+        title: data.name || `VEXYRON v${latestVersion}`,
         changelog: data.body || "No changelog provided for this release.",
         releaseUrl: data.html_url || "https://github.com/Rev0nix/AetherLink/releases",
         publishedAt: data.published_at || new Date().toISOString(),
