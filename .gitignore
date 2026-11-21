@@ -17,7 +17,7 @@ build/
 # Archives & Temporary
 *.zip
 *.tar.gz
-desktop/
+/desktop/
 
 # IDE
 .vscode/
