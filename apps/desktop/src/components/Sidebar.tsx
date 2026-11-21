@@ -82,8 +82,8 @@ export default function Sidebar() {
         <div className="p-6 border-b border-[var(--border-color)]">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#7C5CFC] via-[#32C5FF] to-cyan-300 flex items-center justify-center shadow-lg shadow-[#7C5CFC]/30">
-                <Sparkles size={22} className="text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#7C5CFC] via-[#32C5FF] to-cyan-300 flex items-center justify-center shadow-lg shadow-[#7C5CFC]/30 overflow-hidden border border-[#32C5FF]/40">
+                <img src="/src/assets/logo.png" alt="AetherLink" className="w-full h-full object-cover" />
               </div>
               <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#35D49A] opacity-75"></span>

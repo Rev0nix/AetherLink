@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,9 +60,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aetherlink.android.R
 import androidx.navigation.NavController
 import com.aetherlink.android.core.components.AetherCard
 import com.aetherlink.android.core.components.AetherHeader
@@ -608,7 +611,22 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
             containerColor = AetherCardBg,
-            title = { Text("AetherLink Ecosystem", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_aetherlink_logo),
+                        contentDescription = "AetherLink Logo",
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, AetherCyan.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                    )
+                    Text("AetherLink Ecosystem", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("One Connection. Every Device.", color = AetherCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
