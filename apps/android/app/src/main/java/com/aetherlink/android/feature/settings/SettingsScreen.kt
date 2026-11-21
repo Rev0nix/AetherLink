@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
@@ -82,6 +83,7 @@ import com.aetherlink.android.core.designsystem.AetherTextSecondary
 import com.aetherlink.android.core.designsystem.AetherThemeMode
 import com.aetherlink.android.core.designsystem.ThemeManager
 import com.aetherlink.android.core.i18n.I18nManager
+import com.aetherlink.android.core.update.InAppUpdateInstaller
 import com.aetherlink.android.core.update.UpdateManager
 import com.aetherlink.android.ui.navigation.Screen
 
@@ -254,6 +256,83 @@ fun SettingsScreen(
         item {
             SettingsCategoryHeader(I18nManager.t("settings.about"))
             Spacer(modifier = Modifier.height(10.dp))
+
+            // Real-time In-App Downloading Card
+            if (InAppUpdateInstaller.isDownloading) {
+                AetherCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Downloading Update...",
+                                color = AetherCyan,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "${(InAppUpdateInstaller.downloadProgress * 100).toInt()}%",
+                                color = AetherGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                        LinearProgressIndicator(
+                            progress = { InAppUpdateInstaller.downloadProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = AetherCyan,
+                            trackColor = AetherSurfaceElevated
+                        )
+                        Text(
+                            text = InAppUpdateInstaller.statusText,
+                            color = AetherTextMuted,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            } else if (UpdateManager.isUpdateAvailable && UpdateManager.updateInfo != null) {
+                // Quick Direct Install In-App Card when update detected
+                AetherCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Update Available: v${UpdateManager.updateInfo!!.version}",
+                                    color = AetherGreen,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "Tap to download and install inside the app",
+                                    color = AetherTextMuted,
+                                    fontSize = 11.sp
+                                )
+                            }
+                            AetherPrimaryButton(
+                                text = "Install In-App",
+                                onClick = {
+                                    InAppUpdateInstaller.startDirectDownloadAndInstall(
+                                        context,
+                                        UpdateManager.updateInfo!!.apkDownloadUrl
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     // Check for Updates Row
@@ -261,9 +340,22 @@ fun SettingsScreen(
                         icon = Icons.Default.Download,
                         iconTint = AetherGreen,
                         title = I18nManager.t("settings.check_updates"),
-                        subtitle = if (UpdateManager.isChecking) "Checking GitHub releases..." else "Tap to check GitHub updates • v${AppConstants.VERSION}",
+                        subtitle = if (InAppUpdateInstaller.isDownloading) InAppUpdateInstaller.statusText
+                                   else if (UpdateManager.isChecking) "Checking for updates..."
+                                   else if (UpdateManager.isUpdateAvailable) "v${UpdateManager.updateInfo?.version} available • Tap to install in-app"
+                                   else "Tap to check for updates • Current v${AppConstants.VERSION}",
                         onClick = {
-                            UpdateManager.checkForUpdates(context, manual = true)
+                            if (InAppUpdateInstaller.isDownloading) {
+                                UpdateManager.showDialog = true
+                            } else if (UpdateManager.isUpdateAvailable && UpdateManager.updateInfo != null) {
+                                InAppUpdateInstaller.startDirectDownloadAndInstall(
+                                    context,
+                                    UpdateManager.updateInfo!!.apkDownloadUrl
+                                )
+                                UpdateManager.showDialog = true
+                            } else {
+                                UpdateManager.checkForUpdates(context, manual = true)
+                            }
                         }
                     )
                     SettingsRow(
@@ -277,16 +369,9 @@ fun SettingsScreen(
                         icon = Icons.Default.Info,
                         iconTint = AetherPurple,
                         title = "Developer",
-                        subtitle = "Revanth H M (Tap to view GitHub)",
+                        subtitle = "Revanth H M • System Architect",
                         onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Rev0nix/AetherLink"))
-                                context.startActivity(intent)
-                            } catch (_: Exception) {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("URL", "https://github.com/Rev0nix/AetherLink"))
-                                Toast.makeText(context, "Copied GitHub link to clipboard", Toast.LENGTH_SHORT).show()
-                            }
+                            Toast.makeText(context, "AetherLink • Developed by Revanth H M", Toast.LENGTH_SHORT).show()
                         }
                     )
                     SettingsRow(

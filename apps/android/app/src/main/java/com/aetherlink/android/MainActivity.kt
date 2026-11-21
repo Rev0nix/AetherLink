@@ -16,6 +16,7 @@ import com.aetherlink.android.core.designsystem.AetherLinkTheme
 import com.aetherlink.android.core.designsystem.ThemeManager
 import com.aetherlink.android.core.i18n.I18nManager
 import com.aetherlink.android.core.update.AetherUpdateModal
+import com.aetherlink.android.core.update.InAppUpdateInstaller
 import com.aetherlink.android.core.update.UpdateManager
 import com.aetherlink.android.service.network.ConnectionManager
 import com.aetherlink.android.ui.navigation.AppNavigation
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkAndSyncClipboard()
+        InAppUpdateInstaller.checkPendingInstall(this)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

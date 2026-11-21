@@ -12,8 +12,8 @@ android {
         applicationId = "com.aetherlink.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "2.2.4"
+        versionCode = 8
+        versionName = "2.2.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

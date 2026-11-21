@@ -240,7 +240,7 @@ fun AetherUpdateModal() {
             },
             confirmButton = {
                 AetherPrimaryButton(
-                    text = if (isDownloading) "Downloading Update..." else if (isAvailable) "Direct Update & Install" else "Re-download & Install APK",
+                    text = if (isDownloading) "Downloading Update..." else if (isAvailable) "Install Update In-App" else "Re-install Package In-App",
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Download,

@@ -37,7 +37,7 @@ object UpdateManager {
     private const val PREFS_NAME = "aetherlink_prefs"
     private const val KEY_DISMISSED_VERSION = "dismissed_update_version"
 
-    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.3/1-AetherLink-Android.apk"
+    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.5/1-AetherLink-Android.apk"
     const val FALLBACK_RELEASE_URL = "https://github.com/Rev0nix/AetherLink/releases/latest"
 
     var isChecking by mutableStateOf(false)
@@ -192,36 +192,8 @@ object UpdateManager {
 
     fun downloadAndInstall(context: Context, targetUrl: String?) {
         val urlToOpen = targetUrl ?: updateInfo?.apkDownloadUrl ?: FALLBACK_APK_URL
-
-        // 1. Queue with system DownloadManager
-        try {
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-            if (dm != null && urlToOpen.startsWith("http")) {
-                val request = DownloadManager.Request(Uri.parse(urlToOpen)).apply {
-                    setTitle("1-AetherLink-Android.apk")
-                    setDescription("Downloading AetherLink update...")
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "1-AetherLink-Android.apk")
-                    setMimeType("application/vnd.android.package-archive")
-                }
-                dm.enqueue(request)
-                Toast.makeText(context, "Downloading update... Check notifications", Toast.LENGTH_LONG).show()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "DownloadManager error", e)
-        }
-
-        // 2. Open directly in browser as immediate direct-download
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "Could not open download link: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-
-        showDialog = false
+        InAppUpdateInstaller.startDirectDownloadAndInstall(context, urlToOpen)
+        showDialog = true
     }
 
     private fun isNewer(latest: String, current: String): Boolean {

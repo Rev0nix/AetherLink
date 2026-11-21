@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -34,11 +35,27 @@ object InAppUpdateInstaller {
     var statusText by mutableStateOf("")
         private set
 
+    var pendingInstallFile: File? = null
+
+    fun checkPendingInstall(context: Context) {
+        val file = pendingInstallFile ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (context.packageManager.canRequestPackageInstalls()) {
+                pendingInstallFile = null
+                installApk(context, file)
+            }
+        } else {
+            pendingInstallFile = null
+            installApk(context, file)
+        }
+    }
+
     fun installApk(context: Context, apkFile: File) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!context.packageManager.canRequestPackageInstalls()) {
-                    Toast.makeText(context, "Please allow permission to install updates", Toast.LENGTH_LONG).show()
+                    pendingInstallFile = apkFile
+                    Toast.makeText(context, "Please grant permission to install updates", Toast.LENGTH_LONG).show()
                     val permissionIntent = Intent(
                         Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                         Uri.parse("package:${context.packageName}")
@@ -73,7 +90,7 @@ object InAppUpdateInstaller {
 
         isDownloading = true
         downloadProgress = 0f
-        statusText = "Starting download..."
+        statusText = "Connecting to update server..."
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -81,14 +98,15 @@ object InAppUpdateInstaller {
                 var conn: HttpURLConnection
                 var redirects = 0
 
-                // Follow redirects manually if needed (GitHub redirects to objects.githubusercontent.com)
+                // Follow redirects manually across domains (GitHub releases redirect to AWS S3/Azure Blob CDN)
                 while (true) {
                     val url = URL(currentUrl)
                     conn = url.openConnection() as HttpURLConnection
                     conn.instanceFollowRedirects = true
-                    conn.connectTimeout = 15000
-                    conn.readTimeout = 30000
-                    conn.setRequestProperty("User-Agent", "AetherLink-Updater")
+                    conn.connectTimeout = 30000
+                    conn.readTimeout = 60000
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) AetherLink-Updater")
+                    conn.setRequestProperty("Accept", "*/*")
 
                     val code = conn.responseCode
                     if (code == HttpURLConnection.HTTP_MOVED_TEMP ||
@@ -96,12 +114,15 @@ object InAppUpdateInstaller {
                         code == HttpURLConnection.HTTP_SEE_OTHER ||
                         code == 307 || code == 308
                     ) {
-                        currentUrl = conn.getHeaderField("Location")
+                        val location = conn.getHeaderField("Location") ?: throw IOException("Redirect without Location header")
+                        currentUrl = URL(URL(currentUrl), location).toString()
                         conn.disconnect()
                         redirects++
-                        if (redirects > 5) break
-                    } else {
+                        if (redirects > 10) throw IOException("Too many redirects: $redirects")
+                    } else if (code in 200..299) {
                         break
+                    } else {
+                        throw IOException("Server returned HTTP $code")
                     }
                 }
 
@@ -116,7 +137,7 @@ object InAppUpdateInstaller {
                 val inputStream: InputStream = conn.inputStream
                 val outputStream = FileOutputStream(apkFile)
 
-                val buffer = ByteArray(8192)
+                val buffer = ByteArray(65536)
                 var bytesRead: Int
                 var totalRead: Long = 0
 
@@ -129,7 +150,7 @@ object InAppUpdateInstaller {
                     }
 
                     val mbRead = totalRead / (1024f * 1024f)
-                    val mbTotal = if (contentLength > 0) contentLength / (1024f * 1024f) else 13.0f
+                    val mbTotal = if (contentLength > 0) contentLength / (1024f * 1024f) else 13.7f
                     val percent = if (contentLength > 0) (downloadProgress * 100).toInt() else 0
                     statusText = String.format("Downloading: %.1f MB / %.1f MB (%d%%)", mbRead, mbTotal, percent)
                 }
@@ -141,21 +162,15 @@ object InAppUpdateInstaller {
 
                 withContext(Dispatchers.Main) {
                     isDownloading = false
-                    statusText = "Download complete! Opening installer..."
+                    statusText = "Download complete! Opening package installer..."
                     installApk(context, apkFile)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Direct download failed", e)
+                Log.e(TAG, "Direct in-app download failed", e)
                 withContext(Dispatchers.Main) {
                     isDownloading = false
-                    statusText = "Direct download failed: ${e.message}"
-                    Toast.makeText(context, "Direct download failed. Opening browser fallback...", Toast.LENGTH_SHORT).show()
-                    try {
-                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(browserIntent)
-                    } catch (_: Exception) {}
+                    statusText = "Download failed: ${e.localizedMessage ?: e.message}"
+                    Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
