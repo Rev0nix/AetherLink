@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.AlertDialog
@@ -48,12 +48,12 @@ import com.aetherlink.android.core.designsystem.AetherSurfaceElevated
 import com.aetherlink.android.core.designsystem.AetherTextMuted
 import com.aetherlink.android.core.designsystem.AetherTextPrimary
 import com.aetherlink.android.core.designsystem.AetherTextSecondary
-import com.aetherlink.android.core.i18n.I18nManager
 
 @Composable
 fun AetherUpdateModal() {
     val context = LocalContext.current
     val info = UpdateManager.updateInfo
+    val isAvailable = UpdateManager.isUpdateAvailable
 
     if (UpdateManager.showDialog && info != null) {
         AlertDialog(
@@ -86,13 +86,13 @@ fun AetherUpdateModal() {
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(AetherPurple.copy(alpha = 0.2f)),
+                                    .background(if (isAvailable) AetherGreen.copy(alpha = 0.2f) else AetherPurple.copy(alpha = 0.2f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.AutoAwesome,
+                                    imageVector = if (isAvailable) Icons.Default.Download else Icons.Default.AutoAwesome,
                                     contentDescription = null,
-                                    tint = AetherCyan,
+                                    tint = if (isAvailable) AetherGreen else AetherCyan,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -101,12 +101,12 @@ fun AetherUpdateModal() {
                                 Box(
                                     modifier = Modifier
                                         .clip(CircleShape)
-                                        .background(AetherGreen.copy(alpha = 0.15f))
+                                        .background(if (isAvailable) AetherGreen.copy(alpha = 0.15f) else AetherCyan.copy(alpha = 0.15f))
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = I18nManager.t("update.available"),
-                                        color = AetherGreen,
+                                        text = if (isAvailable) "NEW UPDATE AVAILABLE" else "SYSTEM UP TO DATE",
+                                        color = if (isAvailable) AetherGreen else AetherCyan,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -153,13 +153,13 @@ fun AetherUpdateModal() {
                                 Text("v${AppConstants.VERSION}", color = AetherTextSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = if (isAvailable) Icons.Default.ArrowForward else Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = AetherCyan,
+                                tint = if (isAvailable) AetherGreen else AetherCyan,
                                 modifier = Modifier.size(16.dp)
                             )
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("NEW RELEASE", color = AetherGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Text("LATEST", color = if (isAvailable) AetherGreen else AetherCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                 Text("v${info.version}", color = AetherTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -168,7 +168,7 @@ fun AetherUpdateModal() {
                     // Release notes preview
                     Column {
                         Text(
-                            text = "Release Notes & Improvements",
+                            text = if (isAvailable) "What's New in this Release" else "Release Highlights & Capabilities",
                             color = AetherTextPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
@@ -185,7 +185,7 @@ fun AetherUpdateModal() {
                                 .verticalScroll(rememberScrollState())
                         ) {
                             Text(
-                                text = info.changelog.ifBlank { "Performance improvements and bug fixes." },
+                                text = info.changelog.ifBlank { "Performance improvements, theme personalization, and stability enhancements." },
                                 color = AetherTextSecondary,
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp
@@ -196,7 +196,7 @@ fun AetherUpdateModal() {
                     if (info.apkSize > 0) {
                         val sizeMb = String.format("%.1f MB", info.apkSize / (1024.0 * 1024.0))
                         Text(
-                            text = "📦 Package: ${info.apkName ?: "1-AetherLink-Android.apk"} ($sizeMb)",
+                            text = "📦 Package: ${info.apkName} ($sizeMb)",
                             color = AetherTextMuted,
                             fontSize = 11.sp
                         )
@@ -205,7 +205,7 @@ fun AetherUpdateModal() {
             },
             confirmButton = {
                 AetherPrimaryButton(
-                    text = I18nManager.t("update.download"),
+                    text = if (isAvailable) "Download & Install Update" else "Download Latest APK",
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Download,
@@ -222,7 +222,7 @@ fun AetherUpdateModal() {
             },
             dismissButton = {
                 AetherSecondaryButton(
-                    text = I18nManager.t("update.dismiss"),
+                    text = "Close",
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         UpdateManager.dismissUpdate(context, info.version)

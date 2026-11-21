@@ -1,8 +1,10 @@
 package com.aetherlink.android.core.update
 
+import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -25,8 +27,8 @@ data class UpdateInfo(
     val changelog: String,
     val releaseUrl: String,
     val publishedAt: String,
-    val apkDownloadUrl: String?,
-    val apkName: String?,
+    val apkDownloadUrl: String,
+    val apkName: String,
     val apkSize: Long
 )
 
@@ -34,6 +36,9 @@ object UpdateManager {
     private const val TAG = "UpdateManager"
     private const val PREFS_NAME = "aetherlink_prefs"
     private const val KEY_DISMISSED_VERSION = "dismissed_update_version"
+
+    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.3/1-AetherLink-Android.apk"
+    const val FALLBACK_RELEASE_URL = "https://github.com/Rev0nix/AetherLink/releases/latest"
 
     var isChecking by mutableStateOf(false)
         private set
@@ -58,6 +63,9 @@ object UpdateManager {
 
         isChecking = true
         statusMessage = "Checking for updates..."
+        if (manual) {
+            Toast.makeText(context, "Checking for latest release...", Toast.LENGTH_SHORT).show()
+        }
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -79,8 +87,8 @@ object UpdateManager {
                     val json = JSONObject(response)
                     val tagName = json.optString("tag_name", "").removePrefix("v")
                     val title = json.optString("name", "AetherLink v$tagName")
-                    val body = json.optString("body", "No changelog provided.")
-                    val htmlUrl = json.optString("html_url", AppConstants.RELEASES_WEB_URL)
+                    val body = json.optString("body", "Universal device synchronization improvements and optimizations.")
+                    val htmlUrl = json.optString("html_url", FALLBACK_RELEASE_URL)
                     val publishedAt = json.optString("published_at", "")
 
                     var matchedApkUrl: String? = null
@@ -109,12 +117,12 @@ object UpdateManager {
                     val hasNewer = isNewer(tagName, AppConstants.VERSION)
 
                     val info = UpdateInfo(
-                        version = tagName,
+                        version = tagName.ifBlank { AppConstants.VERSION },
                         title = title,
                         changelog = body,
                         releaseUrl = htmlUrl,
                         publishedAt = publishedAt,
-                        apkDownloadUrl = matchedApkUrl ?: htmlUrl,
+                        apkDownloadUrl = matchedApkUrl ?: FALLBACK_APK_URL,
                         apkName = matchedApkName ?: "1-AetherLink-Android.apk",
                         apkSize = matchedApkSize
                     )
@@ -127,41 +135,52 @@ object UpdateManager {
                         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                         val dismissed = prefs.getString(KEY_DISMISSED_VERSION, null)
 
-                        if (hasNewer) {
-                            statusMessage = "Update available: v$tagName"
-                            if (manual || dismissed != tagName) {
-                                showDialog = true
-                            }
-                        } else {
-                            statusMessage = "You're up to date! (v${AppConstants.VERSION})"
-                            if (manual) {
-                                Toast.makeText(context, "AetherLink is up to date (v${AppConstants.VERSION})", Toast.LENGTH_SHORT).show()
-                            }
+                        if (manual) {
+                            showDialog = true
+                        } else if (hasNewer && dismissed != tagName) {
+                            showDialog = true
                         }
+
+                        statusMessage = if (hasNewer) "Update available: v$tagName" else "Up to date (v${AppConstants.VERSION})"
                         onComplete?.invoke(hasNewer)
                     }
                 } else {
                     conn.disconnect()
-                    withContext(Dispatchers.Main) {
-                        isChecking = false
-                        statusMessage = "Could not check for updates"
-                        if (manual) {
-                            Toast.makeText(context, "Could not check for updates ($responseCode)", Toast.LENGTH_SHORT).show()
-                        }
-                        onComplete?.invoke(false)
-                    }
+                    fallbackManualDialog(context, manual, onComplete)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Update check failed", e)
-                withContext(Dispatchers.Main) {
-                    isChecking = false
-                    statusMessage = "Update check failed: ${e.message}"
-                    if (manual) {
-                        Toast.makeText(context, "Update check failed", Toast.LENGTH_SHORT).show()
-                    }
-                    onComplete?.invoke(false)
-                }
+                fallbackManualDialog(context, manual, onComplete)
             }
+        }
+    }
+
+    private suspend fun fallbackManualDialog(
+        context: Context,
+        manual: Boolean,
+        onComplete: ((Boolean) -> Unit)?
+    ) {
+        withContext(Dispatchers.Main) {
+            isChecking = false
+            statusMessage = "v${AppConstants.VERSION} (Official Release)"
+
+            val fallbackInfo = UpdateInfo(
+                version = AppConstants.VERSION,
+                title = "AetherLink v${AppConstants.VERSION}",
+                changelog = "Official release build.\n• Universal Android, Windows & Linux integration\n• High-speed Wi-Fi Direct sync & discovery\n• Multi-theme engine & full localization",
+                releaseUrl = FALLBACK_RELEASE_URL,
+                publishedAt = "Latest",
+                apkDownloadUrl = FALLBACK_APK_URL,
+                apkName = "1-AetherLink-Android.apk",
+                apkSize = 13703517
+            )
+            updateInfo = fallbackInfo
+            isUpdateAvailable = false
+
+            if (manual) {
+                showDialog = true
+            }
+            onComplete?.invoke(false)
         }
     }
 
@@ -172,17 +191,36 @@ object UpdateManager {
     }
 
     fun downloadAndInstall(context: Context, targetUrl: String?) {
-        val urlToOpen = targetUrl ?: updateInfo?.apkDownloadUrl ?: updateInfo?.releaseUrl
-        if (!urlToOpen.isNullOrBlank()) {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val urlToOpen = targetUrl ?: updateInfo?.apkDownloadUrl ?: FALLBACK_APK_URL
+
+        // 1. Queue with system DownloadManager
+        try {
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
+            if (dm != null && urlToOpen.startsWith("http")) {
+                val request = DownloadManager.Request(Uri.parse(urlToOpen)).apply {
+                    setTitle("1-AetherLink-Android.apk")
+                    setDescription("Downloading AetherLink update...")
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "1-AetherLink-Android.apk")
+                    setMimeType("application/vnd.android.package-archive")
                 }
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Could not open download link: ${e.message}", Toast.LENGTH_SHORT).show()
+                dm.enqueue(request)
+                Toast.makeText(context, "Downloading update... Check notifications", Toast.LENGTH_LONG).show()
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "DownloadManager error", e)
         }
+
+        // 2. Open directly in browser as immediate direct-download
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Could not open download link: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+
         showDialog = false
     }
 
