@@ -38,7 +38,9 @@ import com.aetherlink.android.core.designsystem.AetherTextMuted
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.ui.platform.LocalDensity
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,7 +49,9 @@ fun AetherBottomBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Hide bottom bar when soft keyboard is visible
-    if (WindowInsets.isImeVisible) return
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    if (WindowInsets.isImeVisible || imeBottom > 0) return
 
     // Only display on main 5 tabs
     val isTabRoute = Screen.bottomBarTabs.any { it.route == currentRoute }

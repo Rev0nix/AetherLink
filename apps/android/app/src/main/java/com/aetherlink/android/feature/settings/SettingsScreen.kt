@@ -111,7 +111,6 @@ fun SettingsScreen(
     var portInput by remember { mutableStateOf("45876") }
 
     var showUfwDialog by remember { mutableStateOf(false) }
-    var showAiDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showLicenseDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
@@ -251,31 +250,7 @@ fun SettingsScreen(
             }
         }
 
-        // 4. AI ASSISTANT CONFIGURATION
-        item {
-            SettingsCategoryHeader(I18nManager.t("settings.ai"))
-            Spacer(modifier = Modifier.height(10.dp))
-            AetherCard {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    SettingsRow(
-                        icon = Icons.Default.AutoAwesome,
-                        iconTint = AetherPurple,
-                        title = "Assistant Engine",
-                        subtitle = "Gemini 1.5 Flash + Local Automation",
-                        onClick = { showAiDialog = true }
-                    )
-                    SettingsRow(
-                        icon = Icons.Default.AutoAwesome,
-                        iconTint = AetherCyan,
-                        title = "Launch Aether AI Chat",
-                        subtitle = "Natural language desktop commands",
-                        onClick = { navController.navigate(Screen.Assistant.route) }
-                    )
-                }
-            }
-        }
-
-        // 5. ABOUT & MAINTENANCE
+        // 4. ABOUT & MAINTENANCE
         item {
             SettingsCategoryHeader(I18nManager.t("settings.about"))
             Spacer(modifier = Modifier.height(10.dp))
@@ -539,30 +514,6 @@ fun SettingsScreen(
             },
             dismissButton = {
                 AetherSecondaryButton(text = "Close", onClick = { showUfwDialog = false })
-            }
-        )
-    }
-
-    // 5. Aether AI Configuration Dialog
-    if (showAiDialog) {
-        AlertDialog(
-            onDismissRequest = { showAiDialog = false },
-            containerColor = AetherCardBg,
-            title = { Text("Aether AI Engine", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("AetherLink integrates with Google Gemini 1.5 Flash to orchestrate cross-device operations.", color = AetherTextSecondary, fontSize = 12.sp)
-                    Text("• Cross-device clipboard automation\n• Photo transfer on voice command\n• Hardware state & ping queries", color = AetherTextMuted, fontSize = 11.sp, lineHeight = 16.sp)
-                }
-            },
-            confirmButton = {
-                AetherPrimaryButton(text = "Open Chat", onClick = {
-                    showAiDialog = false
-                    navController.navigate(Screen.Assistant.route)
-                })
-            },
-            dismissButton = {
-                AetherSecondaryButton(text = "Dismiss", onClick = { showAiDialog = false })
             }
         )
     }
