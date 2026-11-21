@@ -2,14 +2,16 @@
 
 # ⚡ AetherLink
 
-**Seamless, High-Performance Cross-Device Continuity Bridge for Android & Desktop**
+**High-Performance, Local-First Cross-Device Continuity Ecosystem for Android & Desktop**
 
 [![Rust](https://img.shields.io/badge/Rust-Workspace-orange?logo=rust)](https://www.rust-lang.org/)
 [![Tauri](https://img.shields.io/badge/Desktop-Tauri%20%2B%20React-24C8DB?logo=tauri)](https://tauri.app/)
 [![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-3DDC84?logo=android)](https://developer.android.com/jetpack/compose)
+[![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows)](https://github.com/Rev0nix/AetherLink/releases)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions)](.github/workflows/ci.yml)
+[![Release](https://img.shields.io/badge/Release-v2.2.0-success?logo=github)](https://github.com/Rev0nix/AetherLink/releases)
 
-*Sync clipboards, explore remote files, mirror notifications and screens, transfer data over local TCP/ADB, and leverage built-in AI workflows across your devices.*
+*Unify your Android smartphone and Desktop workstation (Windows, Linux, macOS) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, screen mirroring, ADB bridging, and built-in AI workflows.*
 
 </div>
 
@@ -17,113 +19,178 @@
 
 ## 📖 Overview
 
-**AetherLink** is a modern, modular ecosystem bridge that unifies your **Android smartphone** and **Desktop workstation** (Linux, Windows, macOS). Designed for low latency, native system integration, and extensibility, AetherLink combines a **Rust + Tauri + React** desktop client with a **Kotlin + Jetpack Compose** Android application, backed by a multi-crate Rust core engine.
+**AetherLink** is a modern, modular ecosystem bridge built to eliminate friction between your mobile device and desktop computer. Designed with a **local-first, privacy-centric architecture**, AetherLink establishes direct peer-to-peer communication over your local network using custom TCP sockets and multicast DNS (`mDNS` / Android `NSD`), while providing an automated **ADB (Android Debug Bridge)** fallback layer when Wi-Fi client isolation is active.
 
-Unlike cloud-dependent sync tools, AetherLink prioritizes direct local-network communication (via mDNS/NSD discovery and custom TCP sockets) alongside an **ADB (Android Debug Bridge)** fallback layer for reliable wired or wireless device management.
+The platform is engineered as a clean monorepo uniting two native clients around a shared multi-crate Rust core:
+* **Desktop Client (`apps/desktop`):** Built with **Rust + Tauri v2 + React + TypeScript + Vite**, delivering ultra-low memory overhead, native OS integration, and a multi-client asynchronous TCP server.
+* **Android Client (`apps/android`):** Built with **Kotlin + Jetpack Compose + Material 3**, featuring Clean Architecture (`domain`, `feature`, `service`, `protocol`), foreground background services, Quick Settings tiles, and system overlay widgets.
+* **Rust Workspace (`crates/`):** 11 modular domain crates powering protocol framing, device lifecycle management, ADB bridging, pairing cryptography, and extensible plugins.
 
 ---
 
-## ✨ Core Features & Capabilities
+## 🆕 Recent Updates & Cross-Platform Tooling
 
-### 🔍 1. Smart Device Discovery & Secure Pairing
-* **Zero-Config Local Discovery:** Uses Android Network Service Discovery (`NsdDiscoveryManage.kt`) and Rust network discovery (`discovery.rs`) to automatically detect AetherLink instances on the same subnet.
-* **QR Code & Handshake Pairing:** Instant pairing via camera QR scanning (`QrCodeScannerHelper.kt`, `PairingScreen.kt`) and desktop pairing modals (`PairingModal.tsx`) backed by dedicated pairing payloads (`PairPayloads.kt`, `pairing.rs`).
-* **ADB Integration:** Built-in ADB controller (`crates/device/src/adb.rs`) capable of enumerating, bridging, and managing connected Android devices directly from the Rust backend.
+Based on the latest repository updates:
+* **Cross-Platform Quick-Launch Scripts:** Added native desktop launcher scripts for **Windows Batch** (`launch-desktop.bat`), **PowerShell** (`launch-desktop.ps1`), and **Unix/Linux/macOS** (`launch-desktop.sh`).
+* **Expanded CI/CD & Release Automation:** Enhanced GitHub Actions pipelines (`.github/workflows/ci.yml` and `.github/workflows/release.yml`) alongside `deploy-release.sh` for streamlined multi-platform builds and artifact packaging.
+* **Refined Tauri IPC & TCP Server:** Expanded desktop command handlers (`features.rs`) and socket management (`tcp_server.rs`) for smoother device command execution and file operations.
+
+---
+
+## ✨ Core Features & Deep-Dive Capabilities
+
+### 🔍 1. Zero-Config Discovery & Cryptographic Handshake Pairing
+* **Automatic Subnet Discovery:**
+  * **Android:** `NsdDiscoveryManage.kt` and `DiscoveryService.kt` broadcast and resolve `_aetherlink._tcp` services via Android's Network Service Discovery API.
+  * **Desktop:** `apps/desktop/src-tauri/src/network/discovery.rs` advertises the workstation and listens for mobile peers on the local network.
+* **Instant QR Code & Pin Pairing:**
+  * **Mobile Scanner:** `QrCodeScannerHelper.kt` and `PairingScreen.kt` parse connection metadata directly from the desktop QR modal (`PairingModal.tsx`).
+  * **Structured Pairing Payloads:** Handshakes are validated through `PairPayloads.kt` (Android) and `crates/device/src/pairing.rs` / `commands/pairing.rs` (Rust).
+* **ADB Fallback Bridge:**
+  * `crates/device/src/adb.rs` interfaces directly with `adb` to detect USB-connected or wireless-debugging Android devices, forward TCP ports, and maintain connectivity even on restrictive corporate or public networks.
 
 ### 📋 2. Universal Clipboard Synchronization
-* **Bidirectional Real-Time Sync:** Automatically synchronizes copied text and links between Android and Desktop (`Clipboard.tsx`, `ClipboardScreen.kt`).
-* **Deep Android OS Hooks:**
-  * **Quick Settings Tile (`ClipboardTileService.kt`):** Push or toggle clipboard sync directly from the Android notification shade.
-  * **Text Selection Context Menu (`ProcessTextActivity.kt`):** Highlight text in any Android app and tap *"Send to AetherLink"* via Android's `PROCESS_TEXT` intent.
-  * **Floating Sync Bubble (`FloatingSyncBubbleService.kt`):** System overlay widget for one-tap cross-device actions while multitasking.
+* **Bidirectional Real-Time Sync:** Any text copied on Desktop (`Clipboard.tsx`) or Android (`ClipboardScreen.kt`) is immediately framed and transmitted across the active TCP session.
+* **Deep Android OS Integrations:**
+  * **Quick Settings Tile (`ClipboardTileService.kt`):** Push clipboard contents or toggle sync directly from the Android notification shade without opening the app.
+  * **Text Selection Context Menu (`ProcessTextActivity.kt`):** Registers Android's `ACTION_PROCESS_TEXT` intent so you can highlight text in any browser or app and tap *"Send to AetherLink"*.
+  * **Background Sync Activity (`ClipboardSyncActivity.kt`):** Handles silent background clipboard capture and dispatch.
+  * **Floating Sync Bubble (`FloatingSyncBubbleService.kt`):** An optional overlay widget providing one-tap cross-device clipboard and file actions while multitasking.
 
-### 📁 3. Remote File Explorer & High-Speed Transfer
-* **Full Directory Browsing:** Navigate your Android device's file system from your desktop (`FileExplorer.tsx`) with interactive breadcrumbs (`Breadcrumb.tsx`), toolbars (`FileToolbar.tsx`), and context menus (`FileContextMenu.tsx`).
-* **Direct TCP Streaming:** Fast file uploads, downloads, and management handled over local TCP sockets (`ConnectionManager.kt`, `tcp_server.rs`, `file_service.rs`).
+### 📁 3. Remote File Explorer & High-Speed TCP Transfer
+* **Desktop File Manager (`FileExplorer.tsx`):** Browse your Android device's internal storage from your desktop with full directory traversal, breadcrumb navigation (`Breadcrumb.tsx`), action toolbars (`FileToolbar.tsx`), list views (`FileList.tsx`, `FileItem.tsx`), and right-click context menus (`FileContextMenu.tsx`).
+* **Dedicated Transfer Screen (`FileTransferScreen.kt`):** Monitor incoming/outgoing transfers and pick files directly from Android.
+* **Chunked Socket Streaming:** Managed by `ConnectionManager.kt` on Android and `tcp_server.rs` / `crates/device/src/file_service.rs` on Rust for reliable binary transfer.
 
 ### 🔔 4. Real-Time Notification Mirroring
-* **Unified Notification Feed:** Forward Android notifications to your desktop workspace (`Notifications.tsx`, `NotificationSyncScreen.kt`) so you never have to pick up your phone while working.
+* **Unified Notification Center:** Android notifications are captured by `NotificationSyncScreen.kt` / `AetherLinkService.kt` and streamed to the desktop `Notifications.tsx` view so you can monitor alerts, messages, and app updates from your workstation.
 
 ### 🖥️ 5. Low-Latency Screen Mirroring
-* **Live Display Streaming:** Stream and view your Android device's screen directly on your desktop (`ScreenMirroringScreen.kt`, `crates/streaming`).
+* **Live Device Display Stream:** `ScreenMirroringScreen.kt` pairs with `crates/streaming` to cast your Android screen to your desktop window for presentations, testing, or remote control.
 
 ### 🤖 6. Integrated AI Assistant
-* **Cross-Device AI Workflows:** Dedicated AI assistant interface (`AiAssistantScreen.kt`) powered by the modular `crates/ai` Rust backend to summarize, process, or act on synced clipboard items and notifications.
+* **Context-Aware Cross-Device AI:** `AiAssistantScreen.kt` connects with `crates/ai` to summarize synced clipboard text, draft replies to mirrored notifications, or automate device actions.
 
 ---
 
-## 🏗️ Monorepo Architecture
-
-AetherLink is organized as a unified monorepo separating native client applications from reusable Rust core libraries:
+## 🏗️ Complete Monorepo Architecture
 
 ```text
 AetherLink-main/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                  # Automated build & test checks
-│       └── release.yml             # Multi-platform release packaging pipeline
+│       ├── ci.yml                      # Automated Rust, Tauri, and Android CI checks
+│       └── release.yml                 # Multi-platform release build & packaging workflow
 ├── apps/
-│   ├── android/                    # Native Android Application (Kotlin + Jetpack Compose)
-│   │   └── app/src/main/java/com/aetherlink/android/
-│   │       ├── core/               # Custom Aether design system, UI components, constants, QR helper
-│   │       ├── domain/             # Clean Architecture models, repositories & use cases
-│   │       ├── feature/            # Feature modules (assistant, clipboard, devices, files, home, mirroring, notifications, onboarding, pairing, settings, splash)
-│   │       ├── protocol/           # Wire message definitions (DeviceInfo, Message, MessageType, PairPayloads)
-│   │       ├── service/            # Foreground services, NSD discovery, TCP client & ConnectionManager
-│   │       ├── ui/                 # Navigation graph, BottomBar & app theming
-│   │       └── viewmodel/          # State management (HomeViewModel)
-│   └── desktop/                    # Cross-Platform Desktop Client (Tauri + React + TypeScript)
-│       ├── src/                    # React UI (Dashboard, FileExplorer, Clipboard, Notifications, Devices, Settings)
-│       └── src-tauri/              # Tauri Rust Backend
+│   ├── android/                        # Native Android Client (Kotlin + Jetpack Compose)
+│   │   ├── build.gradle.kts            # Root Gradle configuration (Kotlin DSL)
+│   │   ├── gradle/libs.versions.toml   # Centralized version catalog
+│   │   └── app/src/main/
+│   │       ├── AndroidManifest.xml     # Foreground services, NSD, overlay & intent filters
+│   │       └── java/com/aetherlink/android/
+│   │           ├── AetherLinkApp.kt    # Application entry & DI initialization
+│   │           ├── MainActivity.kt     # Single-activity Compose host
+│   │           ├── core/
+│   │           │   ├── components/     # AetherBadge, AetherButton, AetherCard, AetherHeader
+│   │           │   ├── constants/      # AppConstants, NetworkConstants
+│   │           │   ├── designsystem/   # Custom Color, Theme, and Typography tokens
+│   │           │   └── utils/          # QrCodeScannerHelper
+│   │           ├── domain/
+│   │           │   ├── model/          # Device, DeviceState
+│   │           │   ├── repository/     # DiscoveryRepository & DiscoveryRepositoryImpl
+│   │           │   └── usecase/        # DiscoverDevicesUseCase
+│   │           ├── feature/
+│   │           │   ├── assistant/      # AiAssistantScreen
+│   │           │   ├── clipboard/      # ClipboardScreen, ClipboardSyncActivity, ProcessTextActivity
+│   │           │   ├── devices/        # DevicesScreen
+│   │           │   ├── files/          # FileTransferScreen
+│   │           │   ├── home/           # HomeScreen dashboard
+│   │           │   ├── mirroring/      # ScreenMirroringScreen
+│   │           │   ├── notifications/  # NotificationSyncScreen
+│   │           │   ├── onboarding/     # Permission onboarding flow
+│   │           │   ├── pairing/        # QR & manual PairingScreen
+│   │           │   ├── settings/       # SettingsScreen
+│   │           │   └── splash/         # SplashScreen
+│   │           ├── protocol/           # Wire schemas: DeviceInfo, Message, MessageType, PairPayloads
+│   │           ├── service/
+│   │           │   ├── AetherLinkService.kt         # Persistent foreground connection service
+│   │           │   ├── ClipboardTileService.kt      # Android Quick Settings Tile
+│   │           │   ├── DiscoveryService.kt          # Background NSD service
+│   │           │   ├── FloatingSyncBubbleService.kt # System overlay bubble
+│   │           │   ├── discovery/                   # NsdDiscoveryManage
+│   │           │   └── network/                     # ConnectionManager, TcpClient
+│   │           ├── ui/
+│   │           │   ├── components/     # StatusCard
+│   │           │   ├── navigation/     # AppNavigation, BottomBar, Screen routes
+│   │           │   └── theme/          # Material 3 theme wrappers
+│   │           └── viewmodel/          # HomeViewModel state holder
+│   └── desktop/                        # Cross-Platform Desktop Client (Tauri + React)
+│       ├── package.json                # Frontend dependencies & scripts
+│       ├── vite.config.ts              # Vite bundler config
+│       ├── src/                        # React + TypeScript UI
+│       │   ├── components/             # DeviceCard, PairingModal, Sidebar, TopBar, device/*, file/*
+│       │   ├── layouts/                # MainLayout shell
+│       │   ├── pages/                  # Dashboard, FileExplorer, Clipboard, Notifications, Devices, DeviceDetails, Settings
+│       │   ├── router/                 # Client-side routing
+│       │   ├── services/tauri.ts       # Typed Tauri IPC invoke wrappers
+│       │   ├── store/appStore.ts       # Global reactive application state
+│       │   └── types/                  # TypeScript interfaces (device.ts, file.ts)
+│       └── src-tauri/                  # Tauri Rust Native Backend
+│           ├── Cargo.toml              # Tauri backend dependencies
+│           ├── tauri.conf.json         # Window, bundle & capability configuration
+│           ├── capabilities/           # Security capability permissions (default.json)
 │           └── src/
-│               ├── commands/       # Tauri IPC commands (device.rs, features.rs, pairing.rs)
-│               └── network/        # Local mDNS discovery & multi-client TCP server (tcp_server.rs)
-├── crates/                         # Modular Rust Workspace Libraries
-│   ├── ai/                         # AI processing & assistant engine
-│   ├── common/                     # Shared types (device, connection, battery, constants, errors)
-│   ├── core/                       # App lifecycle, state management, event bus, plugin/device registry
-│   ├── crypto/                     # Cryptographic primitives & secure channel helpers
-│   ├── database/                   # Local storage & persistence layer
-│   ├── device/                     # Device manager, ADB bridge, pairing logic, heartbeat & file services
-│   ├── network/                    # Low-level transport & socket abstractions
-│   ├── plugin/                     # Extensible plugin system interface
-│   ├── protocol/                   # Shared serialization & protocol framing
-│   ├── streaming/                  # Screen & media streaming pipeline
-│   └── sync/                       # State & clipboard synchronization engine
-├── aetherlink.desktop              # Linux XDG Desktop Entry specification
-├── Cargo.toml                      # Root Cargo Workspace manifest
-├── deploy-release.sh               # Automated build & release deployment script
-└── launch-desktop.sh               # Quick-launch helper script for the desktop app
+│               ├── main.rs & lib.rs    # Tauri app builder & plugin registration
+│               ├── commands/           # IPC handlers: device.rs, features.rs, pairing.rs
+│               └── network/            # discovery.rs & multi-client tcp_server.rs
+├── crates/                             # Modular Rust Workspace Crates
+│   ├── ai/                             # AI processing & prompt orchestration
+│   ├── common/                         # Shared domain models (device, connection, battery, constants, error)
+│   ├── core/                           # App lifecycle, config, event bus, device/plugin registry, state
+│   ├── crypto/                         # Encryption, key exchange & verification primitives
+│   ├── database/                       # Local persistence & history storage
+│   ├── device/                         # DeviceManager, ADB bridge, pairing logic, heartbeat & file_service
+│   ├── network/                        # Low-level transport & socket traits
+│   ├── plugin/                         # Extensible plugin architecture
+│   ├── protocol/                       # Cross-platform binary/JSON message framing
+│   ├── streaming/                      # Screen & media frame streaming
+│   └── sync/                           # State & clipboard synchronization engine
+├── aetherlink.desktop                  # Linux XDG Desktop Entry
+├── Cargo.toml                          # Root Cargo Workspace definition
+├── deploy-release.sh                   # Automated multi-target release build script
+├── launch-desktop.bat                  # Windows Command Prompt quick-launcher
+├── launch-desktop.ps1                  # Windows PowerShell quick-launcher
+└── launch-desktop.sh                   # Linux/macOS Bash quick-launcher
 ```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies & Libraries |
+| Subsystem | Technologies & Frameworks |
 | :--- | :--- |
-| **Desktop Backend** | Rust, Tauri, Tokio (Async Runtime), Custom TCP Server (`tcp_server.rs`) |
-| **Desktop Frontend** | React, TypeScript, Vite, Tailwind CSS, Custom Store (`appStore.ts`) |
-| **Android Client** | Kotlin, Jetpack Compose, Material 3, Custom `Aether` Design System, Android NSD, Foreground Services |
-| **Core Engine** | Rust Cargo Workspace (`11` modular crates), ADB Bridge (`crates/device/src/adb.rs`) |
-| **DevOps & Packaging** | GitHub Actions (`ci.yml`, `release.yml`), Gradle (Kotlin DSL), Cargo, Shell Scripts |
+| **Desktop Shell & Backend** | Rust (2021 Edition), Tauri, Tokio Async Runtime, Custom TCP Server (`tcp_server.rs`) |
+| **Desktop Frontend** | React, TypeScript, Vite, Tailwind CSS, Custom Store (`appStore.ts`), Typed IPC (`tauri.ts`) |
+| **Android Application** | Kotlin, Jetpack Compose, Material 3, Custom `Aether` Design System, Android NSD, Foreground Services |
+| **Core Engine & Protocol** | Cargo Workspace (`11` modular crates), Custom Wire Protocol (`crates/protocol`), ADB CLI Bridge (`adb.rs`) |
+| **CI/CD & Distribution** | GitHub Actions (`ci.yml`, `release.yml`), Gradle Kotlin DSL (`libs.versions.toml`), Cross-platform launch scripts |
 
 ---
 
-## 🔌 Network & Protocol Design
+## 🔌 Communication & Protocol Lifecycle
 
-AetherLink establishes communication between devices through a multi-stage lifecycle:
+AetherLink operates over a deterministic 4-stage connection pipeline:
 
-1. **Discovery Phase:**
-   * Android broadcasts/scans via `NsdDiscoveryManage.kt` and `DiscoveryService.kt`.
-   * Desktop listens and advertises via `apps/desktop/src-tauri/src/network/discovery.rs`.
-2. **Transport Layer:**
-   * Desktop spins up a persistent TCP server (`apps/desktop/src-tauri/src/network/tcp_server.rs`).
-   * Android connects as a client via `TcpClient.kt` and manages active sessions in `ConnectionManager.kt`.
-3. **Wire Protocol:**
-   * Both clients share structured message schemas (`crates/protocol/src/lib.rs` on Rust; `DeviceInfo.kt`, `Message.kt`, `MessageType.kt`, and `PairPayloads.kt` on Android) to route clipboard updates, file transfer chunks, pairing handshakes, and device telemetry.
-4. **ADB Fallback:**
-   * When local Wi-Fi isolation prevents direct TCP discovery, `crates/device/src/adb.rs` allows device detection and communication over USB or wireless ADB.
+1. **Peer Discovery (`mDNS` / `NSD`):**
+   * Desktop (`network/discovery.rs`) and Android (`NsdDiscoveryManage.kt`) advertise their device metadata (`DeviceInfo`) on the local subnet.
+2. **Session Establishment (`TCP`):**
+   * Desktop runs a persistent async TCP listener (`network/tcp_server.rs`).
+   * Android initiates connections via `TcpClient.kt` and manages reconnection/session state inside `ConnectionManager.kt` (~28 KB core networking engine).
+3. **Pairing & Verification:**
+   * Users scan the QR code rendered by `PairingModal.tsx` using `QrCodeScannerHelper.kt`, exchanging `PairPayloads` validated by `crates/device/src/pairing.rs`.
+4. **Multiplexed Feature Framing:**
+   * All clipboard updates (`MessageType`), file directory queries, binary file transfers, and notification payloads are serialized via `crates/protocol/src/lib.rs` and dispatched to Tauri IPC commands (`commands/features.rs`).
+   * **ADB Fallback:** If local Wi-Fi blocks peer-to-peer traffic, `crates/device/src/adb.rs` detects USB/wireless ADB devices and tunnels traffic seamlessly.
 
 ---
 
@@ -131,101 +198,101 @@ AetherLink establishes communication between devices through a multi-stage lifec
 
 ### Prerequisites
 
-Ensure your development environment has the following installed:
-* **Rust Toolchain:** `rustc` and `cargo` (latest stable via [rustup.rs](https://rustup.rs/))
+* **Rust Toolchain:** Latest stable `rustc` & `cargo` via [rustup.rs](https://rustup.rs/)
 * **Node.js & npm:** Node.js `v18+` and `npm`
-* **Android SDK & JDK:** JDK `17+` and Android Studio (with Android SDK API 34+)
-* **ADB (Optional):** Android Platform Tools in your system `PATH` for ADB device bridging
-* **Linux Tauri Dependencies (Linux only):** `libwebkit2gtk-4.1-dev`, `build-essential`, `curl`, `wget`, `file`, `libxdo-dev`, `libssl-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`
+* **Android Studio / SDK:** JDK `17+` and Android SDK (API 34+)
+* **ADB (Recommended):** Android Platform Tools installed and available in your system `PATH`
+* **Linux System Libraries (Linux only):**
+  ```bash
+  sudo apt update && sudo apt install -y libwebkit2gtk-4.1-dev build-essential \
+    curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+  ```
 
 ---
 
-### 1. Clone the Repository
+### 1. Clone & Verify the Rust Workspace
 
 ```bash
 git clone https://github.com/your-username/AetherLink.git
 cd AetherLink
-```
 
-### 2. Build the Rust Core Workspace
-
-Verify that all shared crates compile cleanly:
-
-```bash
+# Build all 11 workspace crates
 cargo build --workspace
 ```
 
-### 3. Run the Desktop Client (Development Mode)
+---
 
-Install frontend dependencies and launch the Tauri desktop window:
+### 2. Launch the Desktop Client
 
+You can use the included cross-platform quick-launch scripts from the repository root:
+
+* **Windows (Command Prompt):**
+  ```cmd
+  launch-desktop.bat
+  ```
+* **Windows (PowerShell):**
+  ```powershell
+  .\launch-desktop.ps1
+  ```
+* **Linux / macOS:**
+  ```bash
+  chmod +x launch-desktop.sh
+  ./launch-desktop.sh
+  ```
+
+Or run manually via `npm`:
 ```bash
 cd apps/desktop
 npm install
 npm run tauri dev
 ```
 
-> **Tip (Linux / macOS):** Run the convenience launch script:
-> ```bash
-> chmod +x launch-desktop.sh
-> ./launch-desktop.sh
-> ```
+---
 
-> **Tip (Windows):** Run the Command Prompt or PowerShell launcher:
-> ```cmd
-> launch-desktop.bat
-> ```
-> Or in PowerShell:
-> ```powershell
-> .\launch-desktop.ps1
-> ```
-
-### 4. Build & Install the Android App
-
-Build the debug APK using the included Gradle wrapper:
+### 3. Build & Install the Android App
 
 ```bash
 cd apps/android
+
+# Build the debug APK
 ./gradlew assembleDebug
-```
 
-Deploy the APK to a connected Android device via ADB:
-
-```bash
+# Install onto a connected Android device via ADB
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 5. Desktop Integration & Installers
+---
 
-* **Windows:** Automated releases produce an NSIS installer (`.exe`), WiX installer (`.msi`), and portable zip (`AetherLink-windows-x64.zip`). You can also build locally with `npm run tauri build`.
-* **Linux:** To install AetherLink into your Linux application launcher, copy `aetherlink.desktop` to your local applications directory (updating `Exec` and `Icon` paths inside the file as needed):
-  ```bash
-  cp aetherlink.desktop ~/.local/share/applications/
-  ```
-  Pre-built `.deb`, `.AppImage`, and `.tar.gz` packages are generated via GitHub Actions releases.
+### 4. Linux Desktop Launcher Integration
+
+To register AetherLink in your Linux desktop environment's application menu:
+```bash
+cp aetherlink.desktop ~/.local/share/applications/
+# Edit ~/.local/share/applications/aetherlink.desktop to point Exec= and Icon= to your binary location
+```
 
 ---
 
-## 🧩 Development & Architecture Notes
+## 🧩 Developer & Architecture Notes
 
-* **Modular Crate Scaffolding:** While core networking, pairing, ADB management, and desktop IPC commands are actively implemented inside `apps/desktop/src-tauri/src/` and `crates/device/`, several domain crates (`ai`, `crypto`, `database`, `network`, `plugin`, `streaming`, `sync`) are structured as clean workspace crates ready for expanded feature implementation.
-* **Android Permissions:** Because AetherLink supports background sync, local network discovery, overlay bubbles (`FloatingSyncBubbleService`), and notification mirroring, ensure you grant **Notification Access**, **Display Over Other Apps**, and **Nearby Devices / Local Network** permissions on first launch via the `OnboardingScreen`.
-* **Release Automation:** Production builds across platforms can be triggered via GitHub Actions (`.github/workflows/release.yml`) or locally via `./deploy-release.sh`.
+* **Crate Modularity:** Core desktop networking (`tcp_server.rs`, `features.rs`), ADB device management (`crates/device/src/adb.rs`), pairing (`pairing.rs`), and protocol framing (`crates/protocol`) are actively implemented, while auxiliary crates (`ai`, `crypto`, `database`, `network`, `plugin`, `streaming`, `sync`) provide clean workspace boundaries for expanding features without coupling to UI layers.
+* **Required Android Permissions:** On first launch, use the built-in `OnboardingScreen` to grant:
+  * **Notification Access** (for Notification Mirroring)
+  * **Display Over Other Apps** (for `FloatingSyncBubbleService`)
+  * **Nearby Devices / Local Network & Camera** (for NSD Discovery and QR Pairing)
+* **Building Production Releases:** Use `./deploy-release.sh` locally or push a version tag to trigger `.github/workflows/release.yml` for automated multi-OS packaging.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! To contribute to AetherLink:
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Ensure both Rust (`cargo test --workspace`) and Android (`./gradlew test`) checks pass.
-4. Commit your changes (`git commit -m 'Add amazing feature'`).
-5. Push to the branch (`git push origin feature/amazing-feature`) and open a Pull Request.
+1. **Fork** the repository and create a feature branch (`git checkout -b feature/your-feature`).
+2. **Verify Rust & Desktop checks:** Run `cargo test --workspace` and `npm run build` inside `apps/desktop`.
+3. **Verify Android checks:** Run `./gradlew test` inside `apps/android`.
+4. **Commit & Push** your changes and open a Pull Request.
 
 ---
 
 ## 📄 License
 
-This project's licensing terms are defined in the [`LICENSE`](LICENSE) file in the root directory. *(Note: Populate `LICENSE` with your preferred license—such as MIT or Apache-2.0—prior to public distribution.)*
+This project is governed by the terms in the root [`LICENSE`](LICENSE) file. *(Reminder: Add your chosen open-source license text, such as MIT or Apache-2.0, to `LICENSE` before publishing.)*
