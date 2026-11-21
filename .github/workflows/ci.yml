@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-workspace:
-    name: Check Rust & Desktop
+  check-workspace-linux:
+    name: Check Rust & Desktop (Linux)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
@@ -47,7 +47,44 @@ jobs:
       - name: Check Rust Workspace
         run: cargo check --workspace
 
+      - name: Run Tests
+        run: cargo test --workspace
+
       - name: Build Desktop Frontend
+        run: |
+          cd apps/desktop
+          npm ci
+          npx tsc --noEmit
+          npm run build
+
+  check-workspace-windows:
+    name: Check Rust & Desktop (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Check Rust Workspace (Windows)
+        run: cargo check --workspace
+
+      - name: Run Tests (Windows)
+        run: cargo test --workspace
+
+      - name: Build Desktop Frontend
+        shell: bash
         run: |
           cd apps/desktop
           npm ci

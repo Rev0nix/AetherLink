@@ -65,7 +65,7 @@ except urllib.error.HTTPError:
     payload = json.dumps({
         'tag_name': tag,
         'name': f'AetherLink {tag}',
-        'body': '### AetherLink Official Release\n\n- Android Companion APK\n- Linux Desktop Standalone Bundle',
+        'body': '### AetherLink Official Release\n\n- Android Companion APK\n- Linux Desktop Standalone Bundle & Packages\n- Windows Desktop Standalone Zip & Installers',
         'draft': False,
         'prerelease': False
     }).encode('utf-8')
@@ -76,7 +76,8 @@ except urllib.error.HTTPError:
 
 files = [
     ('AetherLink.apk', 'application/vnd.android.package-archive'),
-    ('AetherLink-linux-x86_64.tar.gz', 'application/gzip')
+    ('AetherLink-linux-x86_64.tar.gz', 'application/gzip'),
+    ('AetherLink-windows-x64.zip', 'application/zip')
 ]
 
 for name, mime in files:

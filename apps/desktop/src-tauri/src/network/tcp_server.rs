@@ -124,8 +124,12 @@ pub fn send_message(stream: &mut TcpStream, message: Message) -> std::io::Result
 pub fn get_downloads_dir() -> PathBuf {
     if let Some(user_dirs) = dirs::download_dir() {
         user_dirs
+    } else if let Some(home) = dirs::home_dir() {
+        home.join("Downloads")
     } else {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        let home = std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOME"))
+            .unwrap_or_else(|_| ".".to_string());
         PathBuf::from(home).join("Downloads")
     }
 }

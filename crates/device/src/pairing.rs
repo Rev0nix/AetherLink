@@ -82,10 +82,10 @@ impl PairingManager {
     }
 
     fn default_storage_path() -> PathBuf {
-        let base_dir = std::env::var_os("HOME")
-            .map(PathBuf::from)
+        let base_dir = dirs::config_dir()
+            .or_else(dirs::home_dir)
             .unwrap_or_else(|| PathBuf::from("."));
-        let config_dir = base_dir.join(".config").join("aetherlink");
+        let config_dir = base_dir.join("aetherlink");
         let _ = fs::create_dir_all(&config_dir);
         config_dir.join("paired_devices.json")
     }

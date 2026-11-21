@@ -165,10 +165,19 @@ npm install
 npm run tauri dev
 ```
 
-> **Tip:** On Unix-like systems, you can also inspect and run the root convenience script:
+> **Tip (Linux / macOS):** Run the convenience launch script:
 > ```bash
 > chmod +x launch-desktop.sh
 > ./launch-desktop.sh
+> ```
+
+> **Tip (Windows):** Run the Command Prompt or PowerShell launcher:
+> ```cmd
+> launch-desktop.bat
+> ```
+> Or in PowerShell:
+> ```powershell
+> .\launch-desktop.ps1
 > ```
 
 ### 4. Build & Install the Android App
@@ -186,13 +195,14 @@ Deploy the APK to a connected Android device via ADB:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 5. Linux Desktop Integration
+### 5. Desktop Integration & Installers
 
-To install AetherLink into your Linux application launcher, copy `aetherlink.desktop` to your local applications directory (updating the `Exec` and `Icon` paths inside the file as needed):
-
-```bash
-cp aetherlink.desktop ~/.local/share/applications/
-```
+* **Windows:** Automated releases produce an NSIS installer (`.exe`), WiX installer (`.msi`), and portable zip (`AetherLink-windows-x64.zip`). You can also build locally with `npm run tauri build`.
+* **Linux:** To install AetherLink into your Linux application launcher, copy `aetherlink.desktop` to your local applications directory (updating `Exec` and `Icon` paths inside the file as needed):
+  ```bash
+  cp aetherlink.desktop ~/.local/share/applications/
+  ```
+  Pre-built `.deb`, `.AppImage`, and `.tar.gz` packages are generated via GitHub Actions releases.
 
 ---
 

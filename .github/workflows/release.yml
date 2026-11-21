@@ -52,7 +52,7 @@ jobs:
           name: AetherLink-Android
           path: release-android/AetherLink.apk
 
-  build-desktop:
+  build-desktop-linux:
     name: Build Desktop (Linux)
     runs-on: ubuntu-24.04
     steps:
@@ -117,15 +117,72 @@ jobs:
           find src-tauri/target/release/bundle -name "*.deb" -exec cp {} ../../release-desktop/dist/ \;
           find src-tauri/target/release/bundle -name "*.AppImage" -exec cp {} ../../release-desktop/dist/ \;
 
-      - name: Upload Desktop Artifacts
+      - name: Upload Desktop Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AetherLink-Desktop-Linux
           path: release-desktop/dist/*
 
+  build-desktop-windows:
+    name: Build Desktop (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build Desktop Frontend
+        shell: bash
+        run: |
+          cd apps/desktop
+          npm ci
+          npm run build
+
+      - name: Build Desktop Release Binary
+        run: cargo build --release --bin desktop
+
+      - name: Package Standalone Windows Zip
+        shell: bash
+        run: |
+          mkdir -p release-windows/dist
+          mkdir -p release-windows/aetherlink-windows
+          cp target/release/desktop.exe release-windows/aetherlink-windows/AetherLink.exe
+          cp launch-desktop.bat release-windows/aetherlink-windows/
+          cp launch-desktop.ps1 release-windows/aetherlink-windows/
+          cp apps/desktop/src-tauri/icons/icon.ico release-windows/aetherlink-windows/
+          cd release-windows
+          7z a dist/AetherLink-windows-x64.zip aetherlink-windows/
+
+      - name: Build Tauri Windows Bundles (.msi, .exe NSIS installer)
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd apps/desktop
+          npx tauri build --bundles nsis,msi || npx tauri build --bundles nsis
+          mkdir -p ../../release-windows/dist
+          find src-tauri/target/release/bundle -type f \( -name "*.msi" -o -name "*.exe" \) -exec cp {} ../../release-windows/dist/ \;
+
+      - name: Upload Desktop Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherLink-Desktop-Windows
+          path: release-windows/dist/*
+
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-desktop]
+    needs: [build-android, build-desktop-linux, build-desktop-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -137,10 +194,16 @@ jobs:
           name: AetherLink-Android
           path: release-assets
 
-      - name: Download Desktop Artifacts
+      - name: Download Desktop Linux Artifacts
         uses: actions/download-artifact@v4
         with:
           name: AetherLink-Desktop-Linux
+          path: release-assets
+
+      - name: Download Desktop Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: AetherLink-Desktop-Windows
           path: release-assets
 
       - name: Determine Tag

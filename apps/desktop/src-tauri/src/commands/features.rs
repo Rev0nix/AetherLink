@@ -226,8 +226,8 @@ pub fn open_file(path: String) -> Result<(), String> {
     }
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("explorer")
-            .arg(&p)
+        std::process::Command::new("cmd")
+            .args(["/C", "start", "", &p.to_string_lossy()])
             .spawn()
             .map_err(|e| format!("Failed to open file: {e}"))?;
     }

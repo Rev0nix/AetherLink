@@ -2,22 +2,25 @@ use crate::PhoneFile;
 use std::process::Command;
 
 fn adb_shell(serial: &str, command: &[&str]) -> String {
-    let output = Command::new("adb")
+    let output = match Command::new("adb")
         .arg("-s")
         .arg(serial)
         .arg("shell")
         .args(command)
         .output()
-        .expect("Failed to execute adb");
+    {
+        Ok(out) if out.status.success() => out,
+        _ => return String::new(),
+    };
 
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
 pub fn list_devices() -> Vec<String> {
-    let output = Command::new("adb")
-        .arg("devices")
-        .output()
-        .expect("Failed to execute adb");
+    let output = match Command::new("adb").arg("devices").output() {
+        Ok(out) if out.status.success() => out,
+        _ => return Vec::new(),
+    };
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -103,48 +106,44 @@ pub fn list_files(serial: &str, path: &str) -> Vec<PhoneFile> {
         .collect()
 }
 pub fn upload_file(serial: &str, local: &str, remote: &str) {
-    Command::new("adb")
+    let _ = Command::new("adb")
         .arg("-s")
         .arg(serial)
         .arg("push")
         .arg(local)
         .arg(remote)
-        .status()
-        .expect("Failed to upload file");
+        .status();
 }
 
 pub fn download_file(serial: &str, remote: &str, local: &str) {
-    Command::new("adb")
+    let _ = Command::new("adb")
         .arg("-s")
         .arg(serial)
         .arg("pull")
         .arg(remote)
         .arg(local)
-        .status()
-        .expect("Failed to download file");
+        .status();
 }
 
 pub fn delete_file(serial: &str, path: &str) {
-    Command::new("adb")
+    let _ = Command::new("adb")
         .arg("-s")
         .arg(serial)
         .arg("shell")
         .arg("rm")
         .arg(path)
-        .status()
-        .expect("Failed to delete file");
+        .status();
 }
 
 pub fn rename_file(serial: &str, old: &str, new: &str) {
-    Command::new("adb")
+    let _ = Command::new("adb")
         .arg("-s")
         .arg(serial)
         .arg("shell")
         .arg("mv")
         .arg(old)
         .arg(new)
-        .status()
-        .expect("Failed to rename file");
+        .status();
 }
 
 use crate::DeviceInfo;
