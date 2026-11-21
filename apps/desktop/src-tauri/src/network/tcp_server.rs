@@ -621,6 +621,10 @@ fn create_tcp_listener(port: u16) -> std::io::Result<TcpListener> {
     use socket2::{Domain, Socket, Type};
     let socket = Socket::new(Domain::IPV4, Type::STREAM, None)?;
     let _ = socket.set_reuse_address(true);
+    #[cfg(all(unix, not(target_os = "solaris"), not(target_os = "illumos")))]
+    {
+        let _ = socket.set_reuse_port(true);
+    }
     let _ = socket.set_nonblocking(false);
     let addr: std::net::SocketAddr = format!("0.0.0.0:{port}").parse().map_err(|e| {
         std::io::Error::new(std::io::ErrorKind::InvalidInput, e)
@@ -653,7 +657,13 @@ pub fn start_server(app_handle: Option<tauri::AppHandle>) {
             Err(error) => {
                 if retry_count < 5 {
                     retry_count += 1;
-                    eprintln!("Warning: Failed to bind TCP port {PORT} ({error}), retrying {retry_count}/5 in 1s...");
+                    eprintln!("Warning: Failed to bind TCP port {PORT} ({error}), reclaiming port and retrying {retry_count}/5 in 1s...");
+                    #[cfg(unix)]
+                    {
+                        let _ = std::process::Command::new("fuser")
+                            .args(&["-k", &format!("{PORT}/tcp")])
+                            .output();
+                    }
                     std::thread::sleep(std::time::Duration::from_millis(1000));
                 } else {
                     eprintln!("Error: Could not bind TCP server to port {PORT}: {error}");

@@ -9,7 +9,7 @@
 [![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-3DDC84?logo=android)](https://developer.android.com/jetpack/compose)
 [![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows)](https://github.com/Rev0nix/AetherLink/releases)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions)](.github/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/Release-v2.2.0-success?logo=github)](https://github.com/Rev0nix/AetherLink/releases)
+[![Release](https://img.shields.io/badge/Release-v2.2.1-success?logo=github)](https://github.com/Rev0nix/AetherLink/releases)
 
 *Unify your Android smartphone and Desktop workstation (Windows, Linux, macOS) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, screen mirroring, ADB bridging, and built-in AI workflows.*
 

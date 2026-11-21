@@ -3,6 +3,13 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Unblock extracted files to bypass Windows Smart App Control and SmartScreen Mark-of-the-Web blocking
 Get-ChildItem -Path $ScriptDir -Recurse | Unblock-File -ErrorAction SilentlyContinue
 
+# Cleanly terminate any stale instances to free TCP port 45876
+Get-NetTCPConnection -LocalPort 45876 -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Stop-Process -Name "AetherLink" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "desktop" -Force -ErrorAction SilentlyContinue
+
 # Priority 1: Standalone executable in same directory (extracted release package)
 if (Test-Path "$ScriptDir\AetherLink.exe") {
     Start-Process "$ScriptDir\AetherLink.exe" -ArgumentList $args

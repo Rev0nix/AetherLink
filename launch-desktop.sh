@@ -5,6 +5,14 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Linux WebKitGTK acceleration compatibility fix
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
+# Cleanly terminate any stale instances to free TCP port 45876
+if command -v fuser >/dev/null 2>&1; then
+    fuser -k 45876/tcp 2>/dev/null || true
+fi
+pkill -x aetherlink 2>/dev/null || true
+pkill -x desktop 2>/dev/null || true
+sleep 0.2
+
 # Priority 1: Standalone binary in same directory (extracted release package)
 if [ -x "$DIR/aetherlink" ]; then
     exec "$DIR/aetherlink" "$@"

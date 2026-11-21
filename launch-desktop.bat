@@ -5,6 +5,13 @@ set "DIR=%~dp0"
 :: Unblock extracted files to prevent Windows Smart App Control and SmartScreen Mark-of-the-Web blocking
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path '%DIR%' -Recurse | Unblock-File" >nul 2>&1
 
+:: Cleanly terminate any stale instances to free TCP port 45876
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":45876"') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+taskkill /F /IM AetherLink.exe >nul 2>&1
+taskkill /F /IM desktop.exe >nul 2>&1
+
 :: Priority 1: Standalone executable in same directory (extracted release package)
 if exist "%DIR%AetherLink.exe" (
     start "" "%DIR%AetherLink.exe" %*

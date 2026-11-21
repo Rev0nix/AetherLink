@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.0}"
+VERSION="${1:-v2.2.1}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
@@ -84,8 +84,18 @@ files = [
     ('AetherLink-windows-x64.zip', 'application/zip')
 ]
 
+existing_assets = {a['name']: a['id'] for a in rel.get('assets', [])}
+
 for name, mime in files:
     if not os.path.exists(name): continue
+    if name in existing_assets:
+        del_url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/assets/{existing_assets[name]}'
+        del_req = urllib.request.Request(del_url, headers=headers, method='DELETE')
+        try:
+            urllib.request.urlopen(del_req)
+        except Exception:
+            pass
+
     size = os.path.getsize(name)
     upload_url = f'https://uploads.github.com/repos/Rev0nix/AetherLink/releases/{rel_id}/assets?name={name}'
     h = headers.copy()
