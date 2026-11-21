@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -54,11 +55,14 @@ fun AetherUpdateModal() {
     val context = LocalContext.current
     val info = UpdateManager.updateInfo
     val isAvailable = UpdateManager.isUpdateAvailable
+    val isDownloading = InAppUpdateInstaller.isDownloading
 
     if (UpdateManager.showDialog && info != null) {
         AlertDialog(
             onDismissRequest = {
-                UpdateManager.dismissUpdate(context, info.version)
+                if (!isDownloading) {
+                    UpdateManager.dismissUpdate(context, info.version)
+                }
             },
             properties = DialogProperties(usePlatformDefaultWidth = false),
             modifier = Modifier
@@ -121,16 +125,18 @@ fun AetherUpdateModal() {
                             }
                         }
 
-                        IconButton(
-                            onClick = { UpdateManager.dismissUpdate(context, info.version) },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = AetherTextSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        if (!isDownloading) {
+                            IconButton(
+                                onClick = { UpdateManager.dismissUpdate(context, info.version) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close",
+                                    tint = AetherTextSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 
@@ -153,59 +159,88 @@ fun AetherUpdateModal() {
                                 Text("v${AppConstants.VERSION}", color = AetherTextSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                             Icon(
-                                imageVector = if (isAvailable) Icons.Default.ArrowForward else Icons.Default.CheckCircle,
+                                imageVector = if (isAvailable) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = if (isAvailable) AetherGreen else AetherCyan,
                                 modifier = Modifier.size(16.dp)
                             )
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("LATEST", color = if (isAvailable) AetherGreen else AetherCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Text("TARGET", color = if (isAvailable) AetherGreen else AetherCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                 Text("v${info.version}", color = AetherTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
 
-                    // Release notes preview
-                    Column {
-                        Text(
-                            text = if (isAvailable) "What's New in this Release" else "Release Highlights & Capabilities",
-                            color = AetherTextPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Box(
+                    // In-App Download Progress Indicator
+                    if (isDownloading) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 140.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(AetherSurfaceElevated.copy(alpha = 0.5f))
+                                .background(AetherSurfaceElevated)
                                 .border(1.dp, AetherBorder, RoundedCornerShape(12.dp))
-                                .padding(10.dp)
-                                .verticalScroll(rememberScrollState())
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            LinearProgressIndicator(
+                                progress = { InAppUpdateInstaller.downloadProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = AetherCyan,
+                                trackColor = AetherSurfaceElevated.copy(alpha = 0.5f)
+                            )
                             Text(
-                                text = info.changelog.ifBlank { "Performance improvements, theme personalization, and stability enhancements." },
-                                color = AetherTextSecondary,
+                                text = InAppUpdateInstaller.statusText,
+                                color = AetherTextPrimary,
                                 fontSize = 11.sp,
-                                lineHeight = 16.sp
+                                fontWeight = FontWeight.Medium
                             )
                         }
-                    }
+                    } else {
+                        // Release notes preview
+                        Column {
+                            Text(
+                                text = if (isAvailable) "What's New in this Release" else "Release Highlights",
+                                color = AetherTextPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 130.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(AetherSurfaceElevated.copy(alpha = 0.5f))
+                                    .border(1.dp, AetherBorder, RoundedCornerShape(12.dp))
+                                    .padding(10.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Text(
+                                    text = info.changelog.ifBlank { "Direct in-app auto updates, responsive chat interface, and performance upgrades." },
+                                    color = AetherTextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
 
-                    if (info.apkSize > 0) {
-                        val sizeMb = String.format("%.1f MB", info.apkSize / (1024.0 * 1024.0))
-                        Text(
-                            text = "📦 Package: ${info.apkName} ($sizeMb)",
-                            color = AetherTextMuted,
-                            fontSize = 11.sp
-                        )
+                        if (info.apkSize > 0) {
+                            val sizeMb = String.format("%.1f MB", info.apkSize / (1024.0 * 1024.0))
+                            Text(
+                                text = "📦 Package: ${info.apkName} ($sizeMb)",
+                                color = AetherTextMuted,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
                 AetherPrimaryButton(
-                    text = if (isAvailable) "Download & Install Update" else "Download Latest APK",
+                    text = if (isDownloading) "Downloading Update..." else if (isAvailable) "Direct Update & Install" else "Re-download & Install APK",
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Download,
@@ -214,20 +249,24 @@ fun AetherUpdateModal() {
                             modifier = Modifier.size(18.dp)
                         )
                     },
+                    isLoading = isDownloading,
+                    enabled = !isDownloading,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        UpdateManager.downloadAndInstall(context, info.apkDownloadUrl)
+                        InAppUpdateInstaller.startDirectDownloadAndInstall(context, info.apkDownloadUrl)
                     }
                 )
             },
             dismissButton = {
-                AetherSecondaryButton(
-                    text = "Close",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        UpdateManager.dismissUpdate(context, info.version)
-                    }
-                )
+                if (!isDownloading) {
+                    AetherSecondaryButton(
+                        text = "Close",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            UpdateManager.dismissUpdate(context, info.version)
+                        }
+                    )
+                }
             }
         )
     }

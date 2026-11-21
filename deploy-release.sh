@@ -1,33 +1,36 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.3}"
+VERSION="${1:-v2.2.4}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
 
-# Clean stale artifacts to ensure fresh release compilation
-rm -f 1-AetherLink-Android.apk 2-AetherLink-Windows-Setup.exe 3-AetherLink-Linux.deb target/release/desktop
-
-# 1. Build Android APK
-echo "--> Building Android APK..."
-(cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
-if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-    cp apps/android/app/build/outputs/apk/release/app-release.apk ./1-AetherLink-Android.apk
-elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-    cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./1-AetherLink-Android.apk
+if [ ! -f "1-AetherLink-Android.apk" ]; then
+    echo "--> Building Android APK..."
+    (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
+    if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
+        cp apps/android/app/build/outputs/apk/release/app-release.apk ./1-AetherLink-Android.apk
+    elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+        cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./1-AetherLink-Android.apk
+    fi
 fi
 
-# 2. Build Desktop Binary & Linux Debian Package
-echo "--> Building Desktop Release Binary..."
-(cd apps/desktop && npm run build)
-cargo build --release --bin desktop
+if [ ! -f "2-AetherLink-Windows-Setup.exe" ]; then
+    echo "--> Fetching Windows setup package..."
+    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.3/2-AetherLink-Windows-Setup.exe" -o 2-AetherLink-Windows-Setup.exe || true
+fi
 
-echo "--> Packaging Linux Debian (.deb) package..."
-(cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
-DEB_FILE=$(find target/ -type f -name "*.deb" | head -n 1)
-if [ -n "$DEB_FILE" ]; then
-    cp "$DEB_FILE" ./3-AetherLink-Linux.deb
+if [ ! -f "3-AetherLink-Linux.deb" ]; then
+    echo "--> Building Desktop Release Binary..."
+    (cd apps/desktop && npm run build)
+    cargo build --release --bin desktop
+    echo "--> Packaging Linux Debian (.deb) package..."
+    (cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
+    DEB_FILE=$(find target/ -type f -name "*.deb" | head -n 1)
+    if [ -n "$DEB_FILE" ]; then
+        cp "$DEB_FILE" ./3-AetherLink-Linux.deb
+    fi
 fi
 
 # 3. Push Git Tag to Trigger GitHub Actions Release
@@ -71,11 +74,11 @@ Universal device synchronization across Android, Windows, and Linux.
 ---
 
 ### ✨ Highlights in {tag}
-- **Redesigned Settings Page**: Professional 4-tab interface with visual theme cards, language selector, network dashboard, and engine details.
-- **Theme Engine**: 4 distinct visual styles (Midnight Dark, Clean Studio Light, AMOLED Pitch Black, Cyberpunk Neon) with immediate reactive styling.
+- **Direct In-App Updates**: Update and install directly from within the app with real-time download progress and 1-tap package installation.
+- **On-Device Voice Input (Mic)**: High-speed speech recognition using native SpeechRecognizer with live partial streaming.
+- **Responsive Keyboard Insets**: Floating input bars automatically adapt above soft keyboards across all screen sizes.
+- **Theme Personalization**: 4 distinct color systems (Midnight Dark, Clean Studio Light, AMOLED Pitch Black, Cyberpunk Neon).
 - **Multilingual Support**: Instant localization across 8 languages (English, Spanish, French, German, Chinese, Japanese, Hindi, Portuguese).
-- **Auto-Update Notifications**: In-app popup detection when new releases are available with direct 1-click update downloads.
-- **Dynamic Host Architecture**: Accurately reports OS, architecture, and live version across all views.
 """
 
 try:

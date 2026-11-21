@@ -4,9 +4,9 @@ object AppConstants {
 
     const val APP_NAME = "AetherLink"
 
-    const val VERSION = "2.2.3"
+    const val VERSION = "2.2.4"
 
-    const val BUILD_NUMBER = 6
+    const val BUILD_NUMBER = 7
 
     const val GITHUB_REPO = "Rev0nix/AetherLink"
 
