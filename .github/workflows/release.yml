@@ -41,16 +41,16 @@ jobs:
         run: |
           mkdir -p release-android
           if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-            cp apps/android/app/build/outputs/apk/release/app-release.apk release-android/AetherLink.apk
+            cp apps/android/app/build/outputs/apk/release/app-release.apk release-android/1-AetherLink-Android.apk
           elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp apps/android/app/build/outputs/apk/debug/app-debug.apk release-android/AetherLink.apk
+            cp apps/android/app/build/outputs/apk/debug/app-debug.apk release-android/1-AetherLink-Android.apk
           fi
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AetherLink-Android
-          path: release-android/AetherLink.apk
+          path: release-android/1-AetherLink-Android.apk
 
   build-desktop-linux:
     name: Build Desktop (Linux)
@@ -97,32 +97,21 @@ jobs:
         run: |
           cargo build --release --bin desktop
 
-      - name: Package Standalone Tarball
-        run: |
-          mkdir -p release-desktop/aetherlink-desktop
-          cp target/release/desktop release-desktop/aetherlink-desktop/aetherlink
-          cp launch-desktop.sh release-desktop/aetherlink-desktop/
-          cp install-desktop.sh release-desktop/aetherlink-desktop/
-          cp aetherlink.desktop release-desktop/aetherlink-desktop/
-          cp apps/desktop/src-tauri/icons/icon.png release-desktop/aetherlink-desktop/
-          chmod +x release-desktop/aetherlink-desktop/aetherlink release-desktop/aetherlink-desktop/launch-desktop.sh release-desktop/aetherlink-desktop/install-desktop.sh
-          
-          mkdir -p release-desktop/dist
-          tar -czvf release-desktop/dist/AetherLink-linux-x86_64.tar.gz -C release-desktop aetherlink-desktop
-
-      - name: Build Tauri Packages (.deb, .AppImage)
-        continue-on-error: true
+      - name: Build Tauri Debian Package (.deb)
         run: |
           cd apps/desktop
-          npx tauri build --bundles deb,appimage --ignore-version-mismatches || npx tauri build --bundles deb --ignore-version-mismatches || true
+          npx tauri build --bundles deb --ignore-version-mismatches
           mkdir -p ../../release-desktop/dist
-          find ../../target/ -type f \( -name "*.deb" -o -name "*.AppImage" \) -exec cp {} ../../release-desktop/dist/ \;
+          DEB_FILE=$(find ../../target/ -type f -name "*.deb" | head -n 1)
+          if [ -n "$DEB_FILE" ]; then
+            cp "$DEB_FILE" ../../release-desktop/dist/3-AetherLink-Linux.deb
+          fi
 
       - name: Upload Desktop Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AetherLink-Desktop-Linux
-          path: release-desktop/dist/*
+          path: release-desktop/dist/3-AetherLink-Linux.deb
 
   build-desktop-windows:
     name: Build Desktop (Windows)
@@ -154,32 +143,22 @@ jobs:
       - name: Build Desktop Release Binary
         run: cargo build --release --bin desktop
 
-      - name: Package Standalone Windows Zip
-        shell: bash
-        run: |
-          mkdir -p release-windows/dist
-          mkdir -p release-windows/aetherlink-windows
-          cp target/release/desktop.exe release-windows/aetherlink-windows/AetherLink.exe
-          cp launch-desktop.bat release-windows/aetherlink-windows/
-          cp launch-desktop.ps1 release-windows/aetherlink-windows/
-          cp apps/desktop/src-tauri/icons/icon.ico release-windows/aetherlink-windows/
-          cd release-windows
-          7z a dist/AetherLink-windows-x64.zip aetherlink-windows/
-
-      - name: Build Tauri Windows Bundles (.msi, .exe NSIS installer)
-        continue-on-error: true
+      - name: Build Tauri Windows Installer (.exe)
         shell: bash
         run: |
           cd apps/desktop
-          npx tauri build --bundles nsis,msi --ignore-version-mismatches || npx tauri build --bundles nsis --ignore-version-mismatches || true
+          npx tauri build --bundles nsis --ignore-version-mismatches
           mkdir -p ../../release-windows/dist
-          find ../../target/ -type f \( -name "*.msi" -o -name "*setup*.exe" -o -name "*installer*.exe" \) -exec cp {} ../../release-windows/dist/ \;
+          EXE_FILE=$(find ../../target/ -type f -name "*setup*.exe" | head -n 1)
+          if [ -n "$EXE_FILE" ]; then
+            cp "$EXE_FILE" ../../release-windows/dist/2-AetherLink-Windows-Setup.exe
+          fi
 
       - name: Upload Desktop Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AetherLink-Desktop-Windows
-          path: release-windows/dist/*
+          path: release-windows/dist/2-AetherLink-Windows-Setup.exe
 
   publish-release:
     name: Publish GitHub Release

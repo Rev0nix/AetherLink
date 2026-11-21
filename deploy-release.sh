@@ -7,40 +7,35 @@ echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
 
 # Clean stale artifacts to ensure fresh release compilation
-rm -f AetherLink.apk AetherLink-linux-x86_64.tar.gz target/release/desktop
+rm -f 1-AetherLink-Android.apk 2-AetherLink-Windows-Setup.exe 3-AetherLink-Linux.deb target/release/desktop
 
 # 1. Build Android APK
 echo "--> Building Android APK..."
 (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
 if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-    cp apps/android/app/build/outputs/apk/release/app-release.apk ./AetherLink.apk
+    cp apps/android/app/build/outputs/apk/release/app-release.apk ./1-AetherLink-Android.apk
 elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-    cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./AetherLink.apk
+    cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./1-AetherLink-Android.apk
 fi
 
-# 2. Build Desktop Binary
+# 2. Build Desktop Binary & Linux Debian Package
 echo "--> Building Desktop Release Binary..."
 (cd apps/desktop && npm run build)
 cargo build --release --bin desktop
 
-# 3. Create Desktop Tarball
-echo "--> Packaging Desktop tarball..."
-rm -rf /tmp/aetherlink-desktop
-mkdir -p /tmp/aetherlink-desktop
-cp target/release/desktop /tmp/aetherlink-desktop/aetherlink
-cp launch-desktop.sh /tmp/aetherlink-desktop/
-cp install-desktop.sh /tmp/aetherlink-desktop/
-cp aetherlink.desktop /tmp/aetherlink-desktop/
-cp apps/desktop/src-tauri/icons/icon.png /tmp/aetherlink-desktop/
-chmod +x /tmp/aetherlink-desktop/aetherlink /tmp/aetherlink-desktop/launch-desktop.sh /tmp/aetherlink-desktop/install-desktop.sh
-tar -czvf AetherLink-linux-x86_64.tar.gz -C /tmp aetherlink-desktop
+echo "--> Packaging Linux Debian (.deb) package..."
+(cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
+DEB_FILE=$(find target/ -type f -name "*.deb" | head -n 1)
+if [ -n "$DEB_FILE" ]; then
+    cp "$DEB_FILE" ./3-AetherLink-Linux.deb
+fi
 
-# 4. Push Git Tag to Trigger GitHub Actions Release
+# 3. Push Git Tag to Trigger GitHub Actions Release
 echo "--> Pushing Git tag $VERSION..."
 git tag -f "$VERSION"
 git push -f origin "$VERSION"
 
-# 5. Direct Upload to GitHub Releases
+# 4. Direct Upload to GitHub Releases
 python3 - <<EOF
 import urllib.request, json, os
 
@@ -69,7 +64,7 @@ except urllib.error.HTTPError:
     payload = json.dumps({
         'tag_name': tag,
         'name': f'AetherLink {tag}',
-        'body': '### AetherLink Official Release\n\n- Android Companion APK\n- Linux Desktop Standalone Bundle & Packages\n- Windows Desktop Standalone Zip & Installers',
+        'body': '### AetherLink Official Release\n\n1. Android: `1-AetherLink-Android.apk`\n2. Windows: `2-AetherLink-Windows-Setup.exe`\n3. Linux: `3-AetherLink-Linux.deb`',
         'draft': False,
         'prerelease': False
     }).encode('utf-8')
@@ -79,9 +74,9 @@ except urllib.error.HTTPError:
         rel_id = rel['id']
 
 files = [
-    ('AetherLink.apk', 'application/vnd.android.package-archive'),
-    ('AetherLink-linux-x86_64.tar.gz', 'application/gzip'),
-    ('AetherLink-windows-x64.zip', 'application/zip')
+    ('1-AetherLink-Android.apk', 'application/vnd.android.package-archive'),
+    ('2-AetherLink-Windows-Setup.exe', 'application/vnd.microsoft.portable-executable'),
+    ('3-AetherLink-Linux.deb', 'application/vnd.debian.binary-package')
 ]
 
 existing_assets = {a['name']: a['id'] for a in rel.get('assets', [])}
