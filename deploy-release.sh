@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.1}"
+VERSION="${1:-v2.2.2}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
