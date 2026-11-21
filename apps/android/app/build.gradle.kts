@@ -21,9 +21,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("aetherlink-release.jks")
-            storePassword = "aetherlink_release_pass"
-            keyAlias = "aetherlink"
-            keyPassword = "aetherlink_release_pass"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
