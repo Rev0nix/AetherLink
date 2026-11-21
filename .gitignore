@@ -36,4 +36,5 @@ Thumbs.db
 
 # Packaging
 *.deb
+*.exe
 aetherlink-desktop/

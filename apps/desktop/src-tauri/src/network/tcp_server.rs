@@ -199,7 +199,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                         MessageType::Welcome,
                         request_id,
                         json!({
-                            "name": "AetherLink Desktop",
+                            "name": "VEXYRON Desktop",
                             "version": "1.0.0"
                         }),
                     ),
@@ -636,7 +636,7 @@ fn create_tcp_listener(port: u16) -> std::io::Result<TcpListener> {
 
 pub fn start_server(app_handle: Option<tauri::AppHandle>) {
     println!("==============================");
-    println!("AetherLink TCP Server");
+    println!("VEXYRON TCP Server");
     println!("==============================");
 
     let _mdns_daemon = match super::discovery::start_advertisement(PORT) {

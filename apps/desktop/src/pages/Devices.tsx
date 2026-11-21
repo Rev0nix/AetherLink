@@ -203,7 +203,7 @@ export default function Devices() {
               Instant Phone Pairing
             </h3>
             <p className="text-xs text-[#929BB0] leading-relaxed">
-              Open AetherLink on Android &rarr; Tap <span className="text-white font-semibold">Scan QR</span> or connect to <span className="font-mono text-[#32C5FF] font-semibold">{localIp}:{port}</span>.
+              Open VEXYRON on Android &rarr; Tap <span className="text-white font-semibold">Scan QR</span> or connect to <span className="font-mono text-[#32C5FF] font-semibold">{localIp}:{port}</span>.
             </p>
 
             <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
@@ -270,7 +270,7 @@ export default function Devices() {
                 No Devices Connected Right Now
               </h3>
               <p className="text-xs text-[#929BB0] max-w-md mx-auto leading-relaxed">
-                Open AetherLink on your phone to connect. Once connected, your phone will appear here in real-time. When it disconnects, it will automatically disappear.
+                Open VEXYRON on your phone to connect. Once connected, your phone will appear here in real-time. When it disconnects, it will automatically disappear.
               </p>
             </div>
             <button

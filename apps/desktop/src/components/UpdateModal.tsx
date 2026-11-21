@@ -81,7 +81,7 @@ export default function UpdateModal() {
                 {t("update.title")}
               </span>
               <h2 className="text-xl font-extrabold tracking-tight mt-1 text-[var(--text-primary)]">
-                AetherLink v{updateInfo.version}
+                VEXYRON v{updateInfo.version}
               </h2>
             </div>
           </div>

@@ -576,7 +576,7 @@ export default function FileExplorer() {
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold text-white">No Received Files Yet</h4>
                   <p className="text-xs text-[#929BB0] max-w-sm mx-auto">
-                    Files sent from your Android phone in AetherLink will appear here automatically and be saved directly to your Downloads folder.
+                    Files sent from your Android phone in VEXYRON will appear here automatically and be saved directly to your Downloads folder.
                   </p>
                 </div>
               </div>

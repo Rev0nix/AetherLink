@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.8}"
+VERSION="${1:-v2.2.9}"
 echo "============================================="
-echo " Deploying AetherLink Release: $VERSION"
+echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
+
+rm -f ./1-AetherLink-Android.apk ./3-AetherLink-Linux.deb
 
 if [ ! -f "1-AetherLink-Android.apk" ]; then
     echo "--> Building Android APK..."
@@ -47,14 +49,14 @@ with open(os.path.expanduser('~/.git-credentials')) as f:
 
 headers = {
     'Accept': 'application/vnd.github+json',
-    'User-Agent': 'AetherLink-Deployer',
+    'User-Agent': 'VEXYRON-Deployer',
     'Authorization': f'Bearer {token}'
 }
 
 tag = "$VERSION"
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
-body = f"""## 🚀 AetherLink Official Release ({tag})
+body = f"""## 🚀 VEXYRON Official Release ({tag})
 
 Universal device synchronization across Android, Windows, and Linux.
 
@@ -71,6 +73,9 @@ Universal device synchronization across Android, Windows, and Linux.
 ---
 
 ### ✨ Highlights in {tag}
+- **Rebranding to VEXYRON**: Official ecosystem transition from AetherLink to VEXYRON across Android, Windows, and Linux.
+- **Brand New App Image & Visual Identity**: Stunning 3D cybernetic "V" emblem with glowing electric cyan and magenta accents.
+- **Unified Cross-Platform Suite**: Updated desktop and Android companion apps with modern icons, branding, and launchers.
 - **Direct In-App Updates**: Update and install directly from within the app with real-time download progress and 1-tap package installation.
 - **On-Device Voice Input (Mic)**: High-speed speech recognition using native SpeechRecognizer with live partial streaming.
 - **Responsive Keyboard Insets**: Floating input bars automatically adapt above soft keyboards across all screen sizes.
@@ -85,7 +90,7 @@ try:
         rel_id = rel['id']
         # Update body
         up_url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/{rel_id}'
-        up_payload = json.dumps({'name': f'AetherLink {tag}', 'body': body}).encode('utf-8')
+        up_payload = json.dumps({'name': f'VEXYRON {tag}', 'body': body}).encode('utf-8')
         up_req = urllib.request.Request(up_url, data=up_payload, headers=headers, method='PATCH')
         try:
             urllib.request.urlopen(up_req)
@@ -95,7 +100,7 @@ except urllib.error.HTTPError:
     create_url = 'https://api.github.com/repos/Rev0nix/AetherLink/releases'
     payload = json.dumps({
         'tag_name': tag,
-        'name': f'AetherLink {tag}',
+        'name': f'VEXYRON {tag}',
         'body': body,
         'draft': False,
         'prerelease': False

@@ -20,7 +20,7 @@ pub fn start_advertisement(port: u16) -> Result<ServiceDaemon, Box<dyn std::erro
     let mdns = ServiceDaemon::new()?;
 
     let service_type = "_aetherlink._tcp.local.";
-    let instance_name = "AetherLink Desktop";
+    let instance_name = "VEXYRON Desktop";
     let host_name = "aetherlink-desktop.local.";
     let properties = [("version", "1.0.0"), ("platform", "desktop")];
     let host_ip = get_local_lan_ip();

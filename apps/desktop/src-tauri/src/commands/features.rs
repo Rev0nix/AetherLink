@@ -81,7 +81,7 @@ pub fn send_clipboard(content: String, target_device_id: Option<String>) -> bool
     let payload = json!(ClipboardPayload {
         content,
         timestamp: chrono::Utc::now().timestamp_millis(),
-        source_device: Some("AetherLink Desktop".to_string()),
+        source_device: Some("VEXYRON Desktop".to_string()),
     });
 
     let message = Message::new(
@@ -599,7 +599,7 @@ pub struct AppInfo {
 pub fn get_app_info() -> AppInfo {
     AppInfo {
         version: env!("CARGO_PKG_VERSION").to_string(),
-        name: "AetherLink".to_string(),
+        name: "VEXYRON".to_string(),
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
     }

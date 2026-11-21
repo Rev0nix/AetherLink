@@ -221,7 +221,7 @@ export default function PairingModal() {
                 Listening on :45876
               </div>
               <span className="text-[10px] text-[#929BB0] mt-0.5">
-                Scan with AetherLink Camera
+                Scan with VEXYRON Camera
               </span>
             </div>
 
@@ -232,7 +232,7 @@ export default function PairingModal() {
                   Option 1: Quick Scan
                 </span>
                 <p className="text-[#F5F7FF] leading-relaxed">
-                  Open AetherLink on your phone, navigate to <span className="text-[#32C5FF] font-semibold">Devices</span> &rarr; tap <span className="text-[#7C5CFC] font-semibold">Scan QR</span>.
+                  Open VEXYRON on your phone, navigate to <span className="text-[#32C5FF] font-semibold">Devices</span> &rarr; tap <span className="text-[#7C5CFC] font-semibold">Scan QR</span>.
                 </p>
               </div>
 

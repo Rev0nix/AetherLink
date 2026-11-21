@@ -2,11 +2,11 @@ package com.aetherlink.android.core.constants
 
 object AppConstants {
 
-    const val APP_NAME = "AetherLink"
+    const val APP_NAME = "VEXYRON"
 
-    const val VERSION = "2.2.8"
+    const val VERSION = "2.2.9"
 
-    const val BUILD_NUMBER = 11
+    const val BUILD_NUMBER = 12
 
     const val GITHUB_REPO = "Rev0nix/AetherLink"
 

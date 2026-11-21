@@ -32,7 +32,7 @@ export default function TopBar() {
       case "/settings":
         return t("topbar.settings_title");
       default:
-        return "AetherLink";
+        return "VEXYRON";
     }
   };
 
@@ -61,7 +61,7 @@ export default function TopBar() {
       {/* Title & Breadcrumb */}
       <div className="flex flex-col justify-center">
         <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] mb-0.5">
-          <span>AetherLink</span>
+          <span>VEXYRON</span>
           <ChevronRight size={12} className="text-[var(--text-secondary)]/60" />
           <span className="text-[#32C5FF] font-semibold">{title}</span>
         </div>

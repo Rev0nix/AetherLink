@@ -364,7 +364,7 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Default.Info,
                         iconTint = AetherCyan,
-                        title = "AetherLink Android",
+                        title = "VEXYRON Android",
                         subtitle = "v${AppConstants.VERSION} (Build ${AppConstants.BUILD_NUMBER}) • Production Release",
                         onClick = { showAboutDialog = true }
                     )
@@ -374,7 +374,7 @@ fun SettingsScreen(
                         title = "Developer",
                         subtitle = "Revanth H M • System Architect",
                         onClick = {
-                            Toast.makeText(context, "AetherLink • Developed by Revanth H M", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "VEXYRON • Developed by Revanth H M", Toast.LENGTH_SHORT).show()
                         }
                     )
                     SettingsRow(
@@ -606,7 +606,7 @@ fun SettingsScreen(
         )
     }
 
-    // 6. About AetherLink Dialog
+    // 6. About VEXYRON Dialog
     if (showAboutDialog) {
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
@@ -618,13 +618,13 @@ fun SettingsScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_aetherlink_logo),
-                        contentDescription = "AetherLink Logo",
+                        contentDescription = "VEXYRON Logo",
                         modifier = Modifier
                             .size(34.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .border(1.dp, AetherCyan.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
                     )
-                    Text("AetherLink Ecosystem", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("VEXYRON Ecosystem", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             },
             text = {
@@ -632,7 +632,7 @@ fun SettingsScreen(
                     Text("One Connection. Every Device.", color = AetherCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     Text("Version ${AppConstants.VERSION} (Build ${AppConstants.BUILD_NUMBER}) • Production", color = AetherGreen, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text("AetherLink is an open cross-platform device ecosystem bridging Android with Ubuntu Linux, Windows, and macOS.", color = AetherTextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
+                    Text("VEXYRON is an open cross-platform device ecosystem bridging Android with Ubuntu Linux, Windows, and macOS.", color = AetherTextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text("Built with Kotlin, Jetpack Compose, Tauri 2.0, Tokio Async & Rust.", color = AetherTextMuted, fontSize = 11.sp)
                 }

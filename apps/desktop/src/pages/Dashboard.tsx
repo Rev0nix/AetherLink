@@ -337,7 +337,7 @@ export default function Dashboard() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#32C5FF] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#32C5FF]"></span>
               </span>
-              AetherLink Core Active • mDNS Broadcasting
+              VEXYRON Core Active • mDNS Broadcasting
             </div>
 
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#F5F7FF]">
@@ -498,7 +498,7 @@ export default function Dashboard() {
                     Scan to Link Your Android Phone
                   </h3>
                   <p className="text-xs text-[#929BB0] leading-relaxed">
-                    Open <span className="text-white font-medium">AetherLink</span> on your phone and tap <span className="text-[#32C5FF] font-medium">Scan QR</span> or connect to IP <span className="font-mono text-[#32C5FF]">{localIp}:45876</span>.
+                    Open <span className="text-white font-medium">VEXYRON</span> on your phone and tap <span className="text-[#32C5FF] font-medium">Scan QR</span> or connect to IP <span className="font-mono text-[#32C5FF]">{localIp}:45876</span>.
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1 justify-center md:justify-start">

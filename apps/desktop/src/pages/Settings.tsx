@@ -539,7 +539,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                    AetherLink Desktop
+                    VEXYRON Desktop
                   </h2>
                   <p className="text-xs text-[var(--text-secondary)]">
                     {t("nav.tagline")}
@@ -604,7 +604,7 @@ export default function Settings() {
                 <p className="text-[11px] text-[var(--text-secondary)]">
                   {isUpdateAvailable
                     ? `New version v${latestVersion} ready to install.`
-                    : "Check if a newer version of AetherLink has been released on GitHub."}
+                    : "Check if a newer version of VEXYRON has been released on GitHub."}
                 </p>
               </div>
 

@@ -65,7 +65,7 @@ object I18nManager {
             "update.available" to "Update Available",
             "update.download" to "Download & Install Update",
             "update.dismiss" to "Later",
-            "update.uptodate" to "AetherLink is up to date"
+            "update.uptodate" to "VEXYRON is up to date"
         ),
         "es" to mapOf(
             "settings.title" to "Configuración",
@@ -82,7 +82,7 @@ object I18nManager {
             "update.available" to "Actualización disponible",
             "update.download" to "Descargar e instalar",
             "update.dismiss" to "Más tarde",
-            "update.uptodate" to "AetherLink está actualizado"
+            "update.uptodate" to "VEXYRON está actualizado"
         ),
         "de" to mapOf(
             "settings.title" to "Einstellungen",
@@ -99,7 +99,7 @@ object I18nManager {
             "update.available" to "Update verfügbar",
             "update.download" to "Herunterladen & Installieren",
             "update.dismiss" to "Später",
-            "update.uptodate" to "AetherLink ist auf dem neuesten Stand"
+            "update.uptodate" to "VEXYRON ist auf dem neuesten Stand"
         ),
         "fr" to mapOf(
             "settings.title" to "Paramètres",
@@ -116,7 +116,7 @@ object I18nManager {
             "update.available" to "Mise à jour disponible",
             "update.download" to "Télécharger et installer",
             "update.dismiss" to "Plus tard",
-            "update.uptodate" to "AetherLink est à jour"
+            "update.uptodate" to "VEXYRON est à jour"
         ),
         "hi" to mapOf(
             "settings.title" to "सेटिंग्स",
@@ -150,7 +150,7 @@ object I18nManager {
             "update.available" to "有可用更新",
             "update.download" to "下载并安装更新",
             "update.dismiss" to "稍后",
-            "update.uptodate" to "AetherLink 已是最新版本"
+            "update.uptodate" to "VEXYRON 已是最新版本"
         ),
         "ja" to mapOf(
             "settings.title" to "設定",
@@ -184,7 +184,7 @@ object I18nManager {
             "update.available" to "Atualização Disponível",
             "update.download" to "Baixar e Instalar",
             "update.dismiss" to "Depois",
-            "update.uptodate" to "AetherLink está atualizado"
+            "update.uptodate" to "VEXYRON está atualizado"
         )
     )
 

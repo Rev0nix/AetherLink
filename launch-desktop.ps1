@@ -7,10 +7,20 @@ Get-ChildItem -Path $ScriptDir -Recurse | Unblock-File -ErrorAction SilentlyCont
 Get-NetTCPConnection -LocalPort 45876 -ErrorAction SilentlyContinue | ForEach-Object {
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
+Stop-Process -Name "VEXYRON" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "vexyron" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "AetherLink" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "desktop" -Force -ErrorAction SilentlyContinue
 
 # Priority 1: Standalone executable in same directory (extracted release package)
+if (Test-Path "$ScriptDir\VEXYRON.exe") {
+    Start-Process "$ScriptDir\VEXYRON.exe" -ArgumentList $args
+    exit 0
+}
+if (Test-Path "$ScriptDir\vexyron.exe") {
+    Start-Process "$ScriptDir\vexyron.exe" -ArgumentList $args
+    exit 0
+}
 if (Test-Path "$ScriptDir\AetherLink.exe") {
     Start-Process "$ScriptDir\AetherLink.exe" -ArgumentList $args
     exit 0
@@ -37,9 +47,9 @@ if (Test-Path "$ScriptDir\apps\desktop") {
         Write-Host "Installing frontend dependencies..."
         npm install
     }
-    Write-Host "Starting AetherLink in development mode..."
+    Write-Host "Starting VEXYRON in development mode..."
     npm run tauri dev
     exit 0
 }
 
-Write-Error "Could not locate AetherLink.exe in $ScriptDir"
+Write-Error "Could not locate VEXYRON.exe in $ScriptDir"

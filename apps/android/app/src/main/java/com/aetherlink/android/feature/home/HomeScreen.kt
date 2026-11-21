@@ -156,7 +156,7 @@ fun HomeScreen(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_aetherlink_logo),
-                            contentDescription = "AetherLink Logo",
+                            contentDescription = "VEXYRON Logo",
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -164,7 +164,7 @@ fun HomeScreen(
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "AetherLink",
+                                text = "VEXYRON",
                                 color = AetherTextPrimary,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
@@ -323,7 +323,7 @@ fun HomeScreen(
 
                             Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
-                                    text = if (isConnected) desktopDevice?.name ?: "AetherLink Desktop"
+                                    text = if (isConnected) desktopDevice?.name ?: "VEXYRON Desktop"
                                     else if (vm.devices.isNotEmpty()) vm.devices.first().name
                                     else "No Desktop Connected",
                                     color = AetherTextPrimary,
@@ -590,7 +590,7 @@ fun HomeScreen(
 
                     RecentActivityRow(
                         title = "Pairing Handshake Confirmed",
-                        subtitle = "AetherLink Desktop (Linux)",
+                        subtitle = "VEXYRON Desktop (Linux)",
                         time = "Today",
                         icon = Icons.Default.CheckCircle,
                         iconTint = AetherGreen

@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AetherLink"
+rootProject.name = "VEXYRON"
 include(":app")

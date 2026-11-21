@@ -106,7 +106,7 @@ fun SplashScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_aetherlink_logo),
-                        contentDescription = "AetherLink Logo",
+                        contentDescription = "VEXYRON Logo",
                         modifier = Modifier
                             .size(92.dp)
                             .clip(RoundedCornerShape(26.dp))
@@ -117,7 +117,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             Text(
-                text = "AetherLink",
+                text = "VEXYRON",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = AetherTextPrimary,

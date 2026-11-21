@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ AetherLink
+# ⚡ VEXYRON
 
 **High-Performance, Local-First Cross-Device Continuity Ecosystem for Android & Desktop**
 

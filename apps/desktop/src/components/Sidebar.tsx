@@ -83,7 +83,7 @@ export default function Sidebar() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#7C5CFC] via-[#32C5FF] to-cyan-300 flex items-center justify-center shadow-lg shadow-[#7C5CFC]/30 overflow-hidden border border-[#32C5FF]/40">
-                <img src="/src/assets/logo.png" alt="AetherLink" className="w-full h-full object-cover" />
+                <img src="/src/assets/logo.png" alt="VEXYRON" className="w-full h-full object-cover" />
               </div>
               <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#35D49A] opacity-75"></span>
@@ -94,7 +94,7 @@ export default function Sidebar() {
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
                 <h1 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Aether<span className="text-[#32C5FF]">Link</span>
+                  VEXY<span className="text-[#32C5FF]">RON</span>
                 </h1>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[#7C5CFC] font-bold">
                   v{appVersion}
@@ -229,7 +229,7 @@ export default function Sidebar() {
         </div>
 
         <div className="text-[10px] text-center text-[var(--text-secondary)]/70 font-mono">
-          AetherLink • v{appVersion}
+          VEXYRON • v{appVersion}
         </div>
       </div>
     </aside>

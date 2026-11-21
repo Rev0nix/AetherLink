@@ -222,7 +222,7 @@ export async function getAppInfo(): Promise<AppInfo> {
     console.warn("get_app_info fallback:", err);
     return {
       version: "2.2.2",
-      name: "AetherLink",
+      name: "VEXYRON",
       os: "linux",
       arch: "x86_64",
     };

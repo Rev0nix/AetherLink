@@ -9,10 +9,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path '%DI
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":45876"') do (
     taskkill /F /PID %%a >nul 2>&1
 )
+taskkill /F /IM VEXYRON.exe >nul 2>&1
+taskkill /F /IM vexyron.exe >nul 2>&1
 taskkill /F /IM AetherLink.exe >nul 2>&1
 taskkill /F /IM desktop.exe >nul 2>&1
 
 :: Priority 1: Standalone executable in same directory (extracted release package)
+if exist "%DIR%VEXYRON.exe" (
+    start "" "%DIR%VEXYRON.exe" %*
+    exit /b 0
+)
+if exist "%DIR%vexyron.exe" (
+    start "" "%DIR%vexyron.exe" %*
+    exit /b 0
+)
 if exist "%DIR%AetherLink.exe" (
     start "" "%DIR%AetherLink.exe" %*
     exit /b 0
@@ -39,11 +49,11 @@ if exist "%DIR%apps\desktop" (
         echo Installing frontend dependencies...
         call npm install
     )
-    echo Starting AetherLink in development mode...
+    echo Starting VEXYRON in development mode...
     call npm run tauri dev
     exit /b 0
 )
 
-echo Error: Could not locate AetherLink.exe in %DIR%
+echo Error: Could not locate VEXYRON.exe in %DIR%
 pause
 exit /b 1
