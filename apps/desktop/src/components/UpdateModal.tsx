@@ -32,8 +32,22 @@ export default function UpdateModal() {
     closeModal();
   };
 
+  const getPlatformDownloadUrl = () => {
+    if (!updateInfo.assets || updateInfo.assets.length === 0) return updateInfo.releaseUrl;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
+    let matched;
+    if (ua.includes("win")) {
+      matched = updateInfo.assets.find((a) => a.name.includes("Windows") || a.name.endsWith(".exe"));
+    } else if (ua.includes("linux")) {
+      matched = updateInfo.assets.find((a) => a.name.includes("Linux") || a.name.endsWith(".deb"));
+    } else if (ua.includes("android")) {
+      matched = updateInfo.assets.find((a) => a.name.includes("Android") || a.name.endsWith(".apk"));
+    }
+    return matched?.downloadUrl || updateInfo.assets[0]?.downloadUrl || updateInfo.releaseUrl;
+  };
+
   const handleDownload = (url?: string) => {
-    const targetUrl = url || updateInfo.releaseUrl;
+    const targetUrl = url || getPlatformDownloadUrl();
     openUrl(targetUrl);
     closeModal();
   };

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.2}"
+VERSION="${1:-v2.2.3}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
@@ -54,17 +54,49 @@ headers = {
 tag = "$VERSION"
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
+body = f"""## 🚀 AetherLink Official Release ({tag})
+
+Universal device synchronization across Android, Windows, and Linux.
+
+---
+
+### 📥 Release Downloads
+
+| Order | Platform | Package File | Notes |
+|:---:|:---|:---|:---|
+| **1st** | 📱 **Android** | [**`1-AetherLink-Android.apk`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/1-AetherLink-Android.apk) | Android 8.0+ companion app |
+| **2nd** | 🪟 **Windows** | [**`2-AetherLink-Windows-Setup.exe`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/2-AetherLink-Windows-Setup.exe) | Windows 10/11 64-bit installer |
+| **3rd** | 🐧 **Linux** | [**`3-AetherLink-Linux.deb`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/3-AetherLink-Linux.deb) | Ubuntu / Debian 64-bit package |
+
+---
+
+### ✨ Highlights in {tag}
+- **Redesigned Settings Page**: Professional 4-tab interface with visual theme cards, language selector, network dashboard, and engine details.
+- **Theme Engine**: 4 distinct visual styles (Midnight Dark, Clean Studio Light, AMOLED Pitch Black, Cyberpunk Neon) with immediate reactive styling.
+- **Multilingual Support**: Instant localization across 8 languages (English, Spanish, French, German, Chinese, Japanese, Hindi, Portuguese).
+- **Auto-Update Notifications**: In-app popup detection when new releases are available with direct 1-click update downloads.
+- **Dynamic Host Architecture**: Accurately reports OS, architecture, and live version across all views.
+"""
+
 try:
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp:
         rel = json.loads(resp.read().decode())
         rel_id = rel['id']
+        # Update body
+        up_url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/{rel_id}'
+        up_payload = json.dumps({'name': f'AetherLink {tag}', 'body': body}).encode('utf-8')
+        up_req = urllib.request.Request(up_url, data=up_payload, headers=headers, method='PATCH')
+        try:
+            urllib.request.urlopen(up_req)
+        except Exception:
+            pass
 except urllib.error.HTTPError:
     create_url = 'https://api.github.com/repos/Rev0nix/AetherLink/releases'
     payload = json.dumps({
         'tag_name': tag,
         'name': f'AetherLink {tag}',
-        'body': '### AetherLink Official Release\n\n1. Android: `1-AetherLink-Android.apk`\n2. Windows: `2-AetherLink-Windows-Setup.exe`\n3. Linux: `3-AetherLink-Linux.deb`',
+        'body': body,
         'draft': False,
         'prerelease': False
     }).encode('utf-8')

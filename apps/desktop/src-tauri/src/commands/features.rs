@@ -598,7 +598,7 @@ pub struct AppInfo {
 #[tauri::command]
 pub fn get_app_info() -> AppInfo {
     AppInfo {
-        version: "2.2.2".to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
         name: "AetherLink".to_string(),
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
