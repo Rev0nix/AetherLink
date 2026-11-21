@@ -36,10 +36,18 @@ import com.aetherlink.android.core.designsystem.AetherCyan
 import com.aetherlink.android.core.designsystem.AetherPurple
 import com.aetherlink.android.core.designsystem.AetherTextMuted
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AetherBottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Hide bottom bar when soft keyboard is visible
+    if (WindowInsets.isImeVisible) return
 
     // Only display on main 5 tabs
     val isTabRoute = Screen.bottomBarTabs.any { it.route == currentRoute }

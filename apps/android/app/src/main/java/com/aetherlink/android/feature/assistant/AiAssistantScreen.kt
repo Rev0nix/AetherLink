@@ -1,23 +1,36 @@
 package com.aetherlink.android.feature.assistant
 
-import android.os.BatteryManager
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.os.BatteryManager
+import android.speech.RecognizerIntent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,6 +38,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -47,10 +62,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import java.util.Locale
 import com.aetherlink.android.core.components.AetherHeader
 import com.aetherlink.android.core.components.AetherStatusBadge
 import com.aetherlink.android.core.designsystem.AetherBg
@@ -75,6 +93,7 @@ data class ChatMessage(
     val time: String = "Just now"
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiAssistantScreen(
     navController: NavController,
@@ -84,11 +103,50 @@ fun AiAssistantScreen(
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val isImeVisible = WindowInsets.isImeVisible
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                inputText = spoken
+            }
+        }
+    }
+
+    val micPermLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            try {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Aether AI...")
+                }
+                speechLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Voice input not supported", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Microphone permission required", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
 
     val messages = remember {
         mutableStateListOf(
             ChatMessage("1", "Hello! I am Aether AI. How can I assist you with your connected devices today?", isUser = false)
         )
+    }
+
+    LaunchedEffect(isImeVisible) {
+        if (isImeVisible && messages.isNotEmpty()) {
+            delay(150)
+            listState.animateScrollToItem(messages.size - 1)
+        }
     }
 
     val suggestedPrompts = listOf(
@@ -145,7 +203,11 @@ fun AiAssistantScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AetherBg)
-            .padding(top = 52.dp, bottom = 100.dp)
+            .statusBarsPadding()
+            .padding(top = 16.dp)
+            .imePadding()
+            .navigationBarsPadding()
+            .padding(bottom = if (isImeVisible) 10.dp else 95.dp)
     ) {
         // TOP HEADER
         Row(
@@ -250,6 +312,9 @@ fun AiAssistantScreen(
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { handleSend(inputText) }),
                 placeholder = {
                     Text(
                         text = "Ask Aether AI...",
@@ -275,7 +340,26 @@ fun AiAssistantScreen(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(AetherSurfaceElevated)
-                    .border(1.dp, AetherBorder, CircleShape),
+                    .border(1.dp, AetherBorder, CircleShape)
+                    .clickable {
+                        val hasPerm = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (hasPerm) {
+                            try {
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Aether AI...")
+                                }
+                                speechLauncher.launch(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Voice input not supported", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            micPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
