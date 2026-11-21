@@ -35,7 +35,7 @@ jobs:
         run: |
           cd apps/android
           chmod +x gradlew
-          ./gradlew assembleRelease -x lintVitalAnalyzeRelease
+          ./gradlew assembleRelease
 
       - name: Prepare APK Artifact
         run: |
