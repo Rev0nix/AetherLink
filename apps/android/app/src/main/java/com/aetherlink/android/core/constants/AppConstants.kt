@@ -4,7 +4,15 @@ object AppConstants {
 
     const val APP_NAME = "AetherLink"
 
-    const val VERSION = "1.0.0"
+    const val VERSION = "2.2.3"
+
+    const val BUILD_NUMBER = 6
+
+    const val GITHUB_REPO = "Rev0nix/AetherLink"
+
+    const val RELEASES_API_URL = "https://api.github.com/repos/Rev0nix/AetherLink/releases/latest"
+
+    const val RELEASES_WEB_URL = "https://github.com/Rev0nix/AetherLink/releases/latest"
 
     const val DISCOVERY_PORT = 45876
 

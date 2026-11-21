@@ -29,10 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.Language
@@ -66,6 +66,7 @@ import com.aetherlink.android.core.components.AetherCard
 import com.aetherlink.android.core.components.AetherHeader
 import com.aetherlink.android.core.components.AetherPrimaryButton
 import com.aetherlink.android.core.components.AetherSecondaryButton
+import com.aetherlink.android.core.constants.AppConstants
 import com.aetherlink.android.core.designsystem.AetherBg
 import com.aetherlink.android.core.designsystem.AetherBorder
 import com.aetherlink.android.core.designsystem.AetherCardBg
@@ -78,6 +79,10 @@ import com.aetherlink.android.core.designsystem.AetherSurfaceElevated
 import com.aetherlink.android.core.designsystem.AetherTextMuted
 import com.aetherlink.android.core.designsystem.AetherTextPrimary
 import com.aetherlink.android.core.designsystem.AetherTextSecondary
+import com.aetherlink.android.core.designsystem.AetherThemeMode
+import com.aetherlink.android.core.designsystem.ThemeManager
+import com.aetherlink.android.core.i18n.I18nManager
+import com.aetherlink.android.core.update.UpdateManager
 import com.aetherlink.android.ui.navigation.Screen
 
 @Composable
@@ -101,11 +106,7 @@ fun SettingsScreen(
 
     // Active Dialog States
     var showAppearanceDialog by remember { mutableStateOf(false) }
-    var selectedTheme by remember { mutableStateOf("Futuristic Dark") }
-
     var showLanguageDialog by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf("English (System Default)") }
-
     var showPortDialog by remember { mutableStateOf(false) }
     var portInput by remember { mutableStateOf("45876") }
 
@@ -124,7 +125,7 @@ fun SettingsScreen(
     ) {
         item {
             AetherHeader(
-                title = "Settings",
+                title = I18nManager.t("settings.title"),
                 onBack = {
                     if (!navController.popBackStack()) {
                         navController.navigate(Screen.Home.route)
@@ -135,28 +136,28 @@ fun SettingsScreen(
 
         // 1. GENERAL CATEGORY
         item {
-            SettingsCategoryHeader("General")
+            SettingsCategoryHeader(I18nManager.t("settings.general"))
             Spacer(modifier = Modifier.height(10.dp))
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     SettingsRow(
                         icon = Icons.Default.DarkMode,
                         iconTint = AetherPurple,
-                        title = "Appearance",
-                        subtitle = selectedTheme,
+                        title = I18nManager.t("settings.appearance"),
+                        subtitle = "${ThemeManager.currentMode.displayName} • ${ThemeManager.currentMode.subtitle}",
                         onClick = { showAppearanceDialog = true }
                     )
                     SettingsRow(
                         icon = Icons.Default.Language,
                         iconTint = AetherCyan,
-                        title = "Language",
-                        subtitle = selectedLanguage,
+                        title = I18nManager.t("settings.language"),
+                        subtitle = "${I18nManager.currentLanguage.name} (${I18nManager.currentLanguage.nativeName})",
                         onClick = { showLanguageDialog = true }
                     )
                     SettingsToggleRow(
                         icon = Icons.Default.PowerSettingsNew,
                         iconTint = AetherGreen,
-                        title = "Startup Listener",
+                        title = I18nManager.t("settings.startup"),
                         subtitle = "Enable discovery services on device boot",
                         checked = startupBehavior,
                         onCheckedChange = {
@@ -171,7 +172,7 @@ fun SettingsScreen(
 
         // 2. DEVICES CATEGORY
         item {
-            SettingsCategoryHeader("Devices & Permissions")
+            SettingsCategoryHeader(I18nManager.t("settings.devices"))
             Spacer(modifier = Modifier.height(10.dp))
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -216,7 +217,7 @@ fun SettingsScreen(
 
         // 3. NETWORK & DISCOVERY CATEGORY
         item {
-            SettingsCategoryHeader("Network & Discovery")
+            SettingsCategoryHeader(I18nManager.t("settings.network"))
             Spacer(modifier = Modifier.height(10.dp))
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -252,7 +253,7 @@ fun SettingsScreen(
 
         // 4. AI ASSISTANT CONFIGURATION
         item {
-            SettingsCategoryHeader("Aether AI")
+            SettingsCategoryHeader(I18nManager.t("settings.ai"))
             Spacer(modifier = Modifier.height(10.dp))
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -276,20 +277,30 @@ fun SettingsScreen(
 
         // 5. ABOUT & MAINTENANCE
         item {
-            SettingsCategoryHeader("About & Data")
+            SettingsCategoryHeader(I18nManager.t("settings.about"))
             Spacer(modifier = Modifier.height(10.dp))
             AetherCard {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    // Check for Updates Row
+                    SettingsRow(
+                        icon = Icons.Default.Download,
+                        iconTint = AetherGreen,
+                        title = I18nManager.t("settings.check_updates"),
+                        subtitle = if (UpdateManager.isChecking) "Checking GitHub releases..." else "Tap to check GitHub updates • v${AppConstants.VERSION}",
+                        onClick = {
+                            UpdateManager.checkForUpdates(context, manual = true)
+                        }
+                    )
                     SettingsRow(
                         icon = Icons.Default.Info,
                         iconTint = AetherCyan,
                         title = "AetherLink Android",
-                        subtitle = "Version 1.0.0 (Production Release)",
+                        subtitle = "v${AppConstants.VERSION} (Build ${AppConstants.BUILD_NUMBER}) • Production Release",
                         onClick = { showAboutDialog = true }
                     )
                     SettingsRow(
                         icon = Icons.Default.Info,
-                        iconTint = AetherGreen,
+                        iconTint = AetherPurple,
                         title = "Developer",
                         subtitle = "Revanth H M (Tap to view GitHub)",
                         onClick = {
@@ -313,8 +324,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Default.DeleteSweep,
                         iconTint = AetherRed,
-                        title = "Clear Connection Cache",
-                        subtitle = "Reset saved desktop IPs and pairings",
+                        title = I18nManager.t("settings.clear_cache"),
+                        subtitle = "Reset saved desktop IPs, pairings & settings",
                         onClick = { showClearCacheDialog = true }
                     )
                 }
@@ -329,27 +340,57 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showAppearanceDialog = false },
             containerColor = AetherCardBg,
-            title = { Text("Choose Appearance", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = {
+                Text(
+                    text = "Choose Theme & Appearance",
+                    color = AetherTextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf("Futuristic Dark", "OLED Pure Black", "Cyberpunk Violet").forEach { theme ->
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AetherThemeMode.entries.forEach { mode ->
+                        val isSelected = ThemeManager.currentMode == mode
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (selectedTheme == theme) AetherSurfaceElevated else Color.Transparent)
+                                .background(if (isSelected) AetherSurfaceElevated else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) AetherCyan else AetherBorder.copy(alpha = 0.5f),
+                                    RoundedCornerShape(12.dp)
+                                )
                                 .clickable {
-                                    selectedTheme = theme
-                                    Toast.makeText(context, "Applied $theme", Toast.LENGTH_SHORT).show()
+                                    ThemeManager.setTheme(mode, context)
+                                    Toast.makeText(context, "Applied ${mode.displayName}", Toast.LENGTH_SHORT).show()
                                     showAppearanceDialog = false
                                 }
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(theme, color = if (selectedTheme == theme) AetherCyan else AetherTextPrimary, fontSize = 14.sp)
-                            if (selectedTheme == theme) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = AetherCyan, modifier = Modifier.size(18.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = mode.displayName,
+                                    color = if (isSelected) AetherCyan else AetherTextPrimary,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = mode.subtitle,
+                                    color = AetherTextMuted,
+                                    fontSize = 11.sp
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = AetherCyan,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
                     }
@@ -366,27 +407,57 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
             containerColor = AetherCardBg,
-            title = { Text("Select Language", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = {
+                Text(
+                    text = "Select Language",
+                    color = AetherTextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf("English (System Default)", "Spanish", "German", "French", "Hindi").forEach { lang ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    I18nManager.supportedLanguages.forEach { lang ->
+                        val isSelected = I18nManager.currentLanguageCode == lang.code
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (selectedLanguage == lang) AetherSurfaceElevated else Color.Transparent)
+                                .background(if (isSelected) AetherSurfaceElevated else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) AetherCyan else AetherBorder.copy(alpha = 0.5f),
+                                    RoundedCornerShape(12.dp)
+                                )
                                 .clickable {
-                                    selectedLanguage = lang
-                                    Toast.makeText(context, "Language set to $lang", Toast.LENGTH_SHORT).show()
+                                    I18nManager.setLanguage(lang.code, context)
+                                    Toast.makeText(context, "Language: ${lang.name}", Toast.LENGTH_SHORT).show()
                                     showLanguageDialog = false
                                 }
                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(lang, color = if (selectedLanguage == lang) AetherCyan else AetherTextPrimary, fontSize = 14.sp)
-                            if (selectedLanguage == lang) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = AetherCyan, modifier = Modifier.size(18.dp))
+                            Column {
+                                Text(
+                                    text = lang.name,
+                                    color = if (isSelected) AetherCyan else AetherTextPrimary,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = lang.nativeName,
+                                    color = AetherTextMuted,
+                                    fontSize = 11.sp
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = AetherCyan,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
                     }
@@ -406,7 +477,7 @@ fun SettingsScreen(
             title = { Text("TCP Port Configuration", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("The desktop socket server listens on port 45876 by default.", color = AetherTextSecondary, fontSize = 12.sp)
+                    Text("The desktop socket server listens on port ${AppConstants.DISCOVERY_PORT} by default.", color = AetherTextSecondary, fontSize = 12.sp)
                     OutlinedTextField(
                         value = portInput,
                         onValueChange = { portInput = it },
@@ -428,14 +499,14 @@ fun SettingsScreen(
                 })
             },
             dismissButton = {
-                AetherSecondaryButton(text = "Reset", onClick = { portInput = "45876" })
+                AetherSecondaryButton(text = "Reset", onClick = { portInput = AppConstants.DISCOVERY_PORT.toString() })
             }
         )
     }
 
     // 4. Ubuntu Firewall (UFW) Helper Dialog
     if (showUfwDialog) {
-        val ufwCmd = "sudo ufw allow 45876/tcp && sudo ufw allow 5353/udp"
+        val ufwCmd = "sudo ufw allow ${AppConstants.DISCOVERY_PORT}/tcp && sudo ufw allow 5353/udp"
         AlertDialog(
             onDismissRequest = { showUfwDialog = false },
             containerColor = AetherCardBg,
@@ -503,15 +574,26 @@ fun SettingsScreen(
             containerColor = AetherCardBg,
             title = { Text("AetherLink Ecosystem", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Tagline: One Connection. Every Device.", color = AetherCyan, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("One Connection. Every Device.", color = AetherCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Version ${AppConstants.VERSION} (Build ${AppConstants.BUILD_NUMBER}) • Production", color = AetherGreen, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text("AetherLink is an open cross-platform device ecosystem bridging Android with Ubuntu Linux, Windows, and macOS.", color = AetherTextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text("Built with Kotlin, Jetpack Compose, Tauri 2.0, Tokio Async & Rust.", color = AetherTextMuted, fontSize = 11.sp)
                 }
             },
             confirmButton = {
-                AetherPrimaryButton(text = "Awesome", onClick = { showAboutDialog = false })
+                AetherPrimaryButton(
+                    text = "Check Updates",
+                    onClick = {
+                        showAboutDialog = false
+                        UpdateManager.checkForUpdates(context, manual = true)
+                    }
+                )
+            },
+            dismissButton = {
+                AetherSecondaryButton(text = "Close", onClick = { showAboutDialog = false })
             }
         )
     }

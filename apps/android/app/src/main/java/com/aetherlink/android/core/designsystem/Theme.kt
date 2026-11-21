@@ -1,49 +1,71 @@
 package com.aetherlink.android.core.designsystem
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-
-private val DarkColorScheme = darkColorScheme(
-    primary = AetherPurple,
-    onPrimary = AetherTextPrimary,
-    primaryContainer = AetherSurfaceElevated,
-    onPrimaryContainer = AetherCyan,
-    secondary = AetherCyan,
-    onSecondary = AetherBg,
-    tertiary = AetherGreen,
-    background = AetherBg,
-    onBackground = AetherTextPrimary,
-    surface = AetherCardBg,
-    onSurface = AetherTextPrimary,
-    surfaceVariant = AetherSurfaceElevated,
-    onSurfaceVariant = AetherTextSecondary,
-    outline = AetherBorder,
-    error = AetherRed,
-    onError = AetherTextPrimary
-)
 
 @Composable
 fun AetherLinkTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = DarkColorScheme
-    val view = LocalView.current
+    val palette = ThemeManager.currentColors
 
+    val colorScheme = if (palette.isLight) {
+        lightColorScheme(
+            primary = palette.purple,
+            onPrimary = Color.White,
+            primaryContainer = palette.surfaceElevated,
+            onPrimaryContainer = palette.purple,
+            secondary = palette.cyan,
+            onSecondary = Color.White,
+            tertiary = palette.green,
+            background = palette.bg,
+            onBackground = palette.textPrimary,
+            surface = palette.cardBg,
+            onSurface = palette.textPrimary,
+            surfaceVariant = palette.surfaceElevated,
+            onSurfaceVariant = palette.textSecondary,
+            outline = palette.border,
+            error = palette.red,
+            onError = Color.White
+        )
+    } else {
+        darkColorScheme(
+            primary = palette.purple,
+            onPrimary = palette.textPrimary,
+            primaryContainer = palette.surfaceElevated,
+            onPrimaryContainer = palette.cyan,
+            secondary = palette.cyan,
+            onSecondary = palette.bg,
+            tertiary = palette.green,
+            background = palette.bg,
+            onBackground = palette.textPrimary,
+            surface = palette.cardBg,
+            onSurface = palette.textPrimary,
+            surfaceVariant = palette.surfaceElevated,
+            onSurfaceVariant = palette.textSecondary,
+            outline = palette.border,
+            error = palette.red,
+            onError = palette.textPrimary
+        )
+    }
+
+    val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = AetherBg.toArgb()
-            window.navigationBarColor = AetherBg.toArgb()
+            window.statusBarColor = palette.bg.toArgb()
+            window.navigationBarColor = palette.bg.toArgb()
             val windowInsetsController = WindowCompat.getInsetsController(window, view)
-            windowInsetsController.isAppearanceLightStatusBars = false
-            windowInsetsController.isAppearanceLightNavigationBars = false
+            windowInsetsController.isAppearanceLightStatusBars = palette.isLight
+            windowInsetsController.isAppearanceLightNavigationBars = palette.isLight
         }
     }
 
