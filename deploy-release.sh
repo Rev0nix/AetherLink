@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v1.0.0}"
+VERSION="${1:-v2.2.0}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
 
-# 1. Build Android APK if not already built
-if [ ! -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ] && [ ! -f "AetherLink.apk" ]; then
-    echo "--> Building Android APK..."
-    (cd apps/android && chmod +x gradlew && ./gradlew assembleDebug)
+# Clean stale artifacts to ensure fresh release compilation
+rm -f AetherLink.apk AetherLink-linux-x86_64.tar.gz target/release/desktop
+
+# 1. Build Android APK
+echo "--> Building Android APK..."
+(cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
+if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
+    cp apps/android/app/build/outputs/apk/release/app-release.apk ./AetherLink.apk
+elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
     cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./AetherLink.apk
 fi
 
-# 2. Build Desktop Binary if not already built
-if [ ! -f "target/release/desktop" ]; then
-    echo "--> Building Desktop Release Binary..."
-    (cd apps/desktop && npm run build)
-    cargo build --release --bin desktop
-fi
+# 2. Build Desktop Binary
+echo "--> Building Desktop Release Binary..."
+(cd apps/desktop && npm run build)
+cargo build --release --bin desktop
 
 # 3. Create Desktop Tarball
 echo "--> Packaging Desktop tarball..."
