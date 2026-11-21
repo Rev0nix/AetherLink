@@ -48,6 +48,8 @@ pub fn run() {
             send_file_to_device,
             send_file_bytes,
             pick_files_dialog,
+            get_app_info,
+            open_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

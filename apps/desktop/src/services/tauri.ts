@@ -207,3 +207,32 @@ export async function pickFilesDialog(): Promise<string[]> {
     return [];
   }
 }
+
+export interface AppInfo {
+  version: string;
+  name: string;
+  os: string;
+  arch: string;
+}
+
+export async function getAppInfo(): Promise<AppInfo> {
+  try {
+    return await invoke<AppInfo>("get_app_info");
+  } catch (err) {
+    console.warn("get_app_info fallback:", err);
+    return {
+      version: "2.2.2",
+      name: "AetherLink",
+      os: "linux",
+      arch: "x86_64",
+    };
+  }
+}
+
+export async function openUrl(url: string): Promise<void> {
+  try {
+    await invoke("open_url", { url });
+  } catch (_e) {
+    window.open(url, "_blank");
+  }
+}

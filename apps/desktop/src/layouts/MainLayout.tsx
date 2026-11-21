@@ -4,8 +4,23 @@ import { listen } from "@tauri-apps/api/event";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 import PairingModal from "../components/PairingModal";
+import UpdateModal from "../components/UpdateModal";
+import { useUpdateStore } from "../services/updateService";
+import { useThemeStore } from "../store/themeStore";
 
 export default function MainLayout() {
+  const { checkUpdates } = useUpdateStore();
+  const { theme } = useThemeStore();
+
+  useEffect(() => {
+    // Check for application releases after app startup
+    const timer = setTimeout(() => {
+      void checkUpdates(false);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     // Global listener: Automatically write incoming clipboard text from phone to OS clipboard & history
     const unlisten = listen<{
@@ -48,8 +63,12 @@ export default function MainLayout() {
       unlisten.then((f) => f());
     };
   }, []);
+
   return (
-    <div className="flex h-screen bg-[#090B14] text-[#F5F7FF] overflow-hidden antialiased font-sans selection:bg-[#7C5CFC]/30 selection:text-[#32C5FF]">
+    <div
+      data-theme={theme}
+      className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden antialiased font-sans selection:bg-[#7C5CFC]/30 selection:text-[#32C5FF]"
+    >
       {/* Sidebar Navigation */}
       <Sidebar />
 
@@ -57,7 +76,7 @@ export default function MainLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative">
         <TopBar />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 bg-[#090B14] bg-dot-matrix relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 bg-[var(--bg-primary)] bg-dot-matrix relative">
           {/* Subtle radial ambient glow at top */}
           <div className="pointer-events-none absolute top-0 left-1/3 w-[600px] h-[350px] bg-gradient-to-b from-[#7C5CFC]/10 via-[#32C5FF]/5 to-transparent blur-3xl" />
           
@@ -69,6 +88,9 @@ export default function MainLayout() {
 
       {/* Global Pairing & QR Modal */}
       <PairingModal />
+
+      {/* Global New Version Update Modal */}
+      <UpdateModal />
     </div>
   );
 }
