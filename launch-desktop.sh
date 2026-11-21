@@ -14,20 +14,18 @@ pkill -x desktop 2>/dev/null || true
 sleep 0.2
 
 # Priority 1: Standalone binary in same directory (extracted release package)
-if [ -x "$DIR/aetherlink" ]; then
-    exec "$DIR/aetherlink" "$@"
-elif [ -f "$DIR/aetherlink" ]; then
+if [ -f "$DIR/aetherlink" ]; then
     chmod +x "$DIR/aetherlink"
     exec "$DIR/aetherlink" "$@"
-elif [ -x "$DIR/desktop" ]; then
-    exec "$DIR/desktop" "$@"
 elif [ -f "$DIR/desktop" ]; then
     chmod +x "$DIR/desktop"
     exec "$DIR/desktop" "$@"
 # Priority 2: Built binary in workspace target/ directory
-elif [ -x "$DIR/target/release/desktop" ]; then
+elif [ -f "$DIR/target/release/desktop" ]; then
+    chmod +x "$DIR/target/release/desktop"
     exec "$DIR/target/release/desktop" "$@"
-elif [ -x "$DIR/target/debug/desktop" ]; then
+elif [ -f "$DIR/target/debug/desktop" ]; then
+    chmod +x "$DIR/target/debug/desktop"
     exec "$DIR/target/debug/desktop" "$@"
 # Priority 3: Fall back to development mode if within source repository
 elif [ -d "$DIR/apps/desktop" ]; then
