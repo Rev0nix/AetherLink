@@ -207,7 +207,15 @@ fun HomeScreen(
                             .clip(CircleShape)
                             .background(AetherCardBg)
                             .border(1.dp, AetherBorder, CircleShape)
-                            .clickable { navController.navigate(Screen.Settings.route) },
+                            .clickable {
+                                navController.navigate(Screen.Settings.route) {
+                                    popUpTo(Screen.Home.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

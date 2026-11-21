@@ -770,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "desktop"
-version = "2.2.6"
+version = "2.2.7"
 dependencies = [
  "aether_core",
  "arboard",

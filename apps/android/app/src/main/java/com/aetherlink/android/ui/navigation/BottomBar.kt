@@ -96,12 +96,21 @@ fun AetherBottomBar(navController: NavController) {
                             indication = null
                         ) {
                             if (currentRoute != tab.route) {
-                                navController.navigate(tab.route) {
-                                    popUpTo(Screen.Home.route) {
-                                        saveState = true
+                                if (tab == Screen.Home) {
+                                    if (!navController.popBackStack(Screen.Home.route, inclusive = false)) {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Home.route) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                } else {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(Screen.Home.route) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             }
                         }
