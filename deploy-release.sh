@@ -29,9 +29,10 @@ rm -rf /tmp/aetherlink-desktop
 mkdir -p /tmp/aetherlink-desktop
 cp target/release/desktop /tmp/aetherlink-desktop/aetherlink
 cp launch-desktop.sh /tmp/aetherlink-desktop/
+cp install-desktop.sh /tmp/aetherlink-desktop/
 cp aetherlink.desktop /tmp/aetherlink-desktop/
 cp apps/desktop/src-tauri/icons/icon.png /tmp/aetherlink-desktop/
-chmod +x /tmp/aetherlink-desktop/aetherlink /tmp/aetherlink-desktop/launch-desktop.sh
+chmod +x /tmp/aetherlink-desktop/aetherlink /tmp/aetherlink-desktop/launch-desktop.sh /tmp/aetherlink-desktop/install-desktop.sh
 tar -czvf AetherLink-linux-x86_64.tar.gz -C /tmp aetherlink-desktop
 
 # 4. Push Git Tag to Trigger GitHub Actions Release

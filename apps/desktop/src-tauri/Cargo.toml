@@ -32,4 +32,5 @@ aether_core = { path = "../../../crates/core" }
 device = { path = "../../../crates/device" }
 protocol = { path = "../../../crates/protocol" }
 tauri-plugin-dialog = "2.7.1"
+socket2 = "0.5"
 arboard = { version = "3.7.0", features = ["wayland-data-control"] }

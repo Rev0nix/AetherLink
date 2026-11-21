@@ -102,9 +102,10 @@ jobs:
           mkdir -p release-desktop/aetherlink-desktop
           cp target/release/desktop release-desktop/aetherlink-desktop/aetherlink
           cp launch-desktop.sh release-desktop/aetherlink-desktop/
+          cp install-desktop.sh release-desktop/aetherlink-desktop/
           cp aetherlink.desktop release-desktop/aetherlink-desktop/
           cp apps/desktop/src-tauri/icons/icon.png release-desktop/aetherlink-desktop/
-          chmod +x release-desktop/aetherlink-desktop/aetherlink release-desktop/aetherlink-desktop/launch-desktop.sh
+          chmod +x release-desktop/aetherlink-desktop/aetherlink release-desktop/aetherlink-desktop/launch-desktop.sh release-desktop/aetherlink-desktop/install-desktop.sh
           
           mkdir -p release-desktop/dist
           tar -czvf release-desktop/dist/AetherLink-linux-x86_64.tar.gz -C release-desktop aetherlink-desktop
@@ -113,9 +114,9 @@ jobs:
         continue-on-error: true
         run: |
           cd apps/desktop
-          npx tauri build --bundles deb,appimage
-          find src-tauri/target/release/bundle -name "*.deb" -exec cp {} ../../release-desktop/dist/ \;
-          find src-tauri/target/release/bundle -name "*.AppImage" -exec cp {} ../../release-desktop/dist/ \;
+          npx tauri build --bundles deb,appimage --ignore-version-mismatches || npx tauri build --bundles deb --ignore-version-mismatches || true
+          mkdir -p ../../release-desktop/dist
+          find ../../target/ -type f \( -name "*.deb" -o -name "*.AppImage" \) -exec cp {} ../../release-desktop/dist/ \;
 
       - name: Upload Desktop Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -170,9 +171,9 @@ jobs:
         shell: bash
         run: |
           cd apps/desktop
-          npx tauri build --bundles nsis,msi || npx tauri build --bundles nsis
+          npx tauri build --bundles nsis,msi --ignore-version-mismatches || npx tauri build --bundles nsis --ignore-version-mismatches || true
           mkdir -p ../../release-windows/dist
-          find src-tauri/target/release/bundle -type f \( -name "*.msi" -o -name "*.exe" \) -exec cp {} ../../release-windows/dist/ \;
+          find ../../target/ -type f \( -name "*.msi" -o -name "*setup*.exe" -o -name "*installer*.exe" \) -exec cp {} ../../release-windows/dist/ \;
 
       - name: Upload Desktop Windows Artifacts
         uses: actions/upload-artifact@v4

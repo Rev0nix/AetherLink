@@ -224,6 +224,36 @@ cargo build --workspace
 
 ### 2. Launch the Desktop Client
 
+#### Option A: Running from Release Bundles
+
+* **Windows:**
+  If you downloaded `AetherLink-windows-x64.zip`:
+  1. Extract the zip folder.
+  2. Double-click `launch-desktop.bat` (or right-click `launch-desktop.ps1` -> Run with PowerShell).
+     > **💡 Windows Smart App Control / SmartScreen Note:** Windows 11 Smart App Control blocks unsigned `.exe` files downloaded from web browsers via the NTFS "Mark of the Web" (`Zone.Identifier`). `launch-desktop.bat` automatically unblocks extracted files and launches `AetherLink.exe` safely.
+     >
+     > Alternatively, right-click `AetherLink.exe` (or the `.zip` archive before extraction) -> **Properties** -> check **Unblock** at the bottom -> click **Apply**, or run PowerShell:
+     > ```powershell
+     > Unblock-File -Path .\AetherLink.exe
+     > ```
+* **Linux:**
+  If you downloaded `AetherLink-linux-x86_64.tar.gz`:
+  1. Extract the tarball:
+     ```bash
+     tar -xzvf AetherLink-linux-x86_64.tar.gz
+     cd aetherlink-desktop
+     ```
+  2. Launch directly:
+     ```bash
+     ./launch-desktop.sh
+     ```
+  3. (Optional) Install the desktop shortcut into your application menu:
+     ```bash
+     ./install-desktop.sh
+     ```
+
+#### Option B: Running from Source / Development Mode
+
 You can use the included cross-platform quick-launch scripts from the repository root:
 
 * **Windows (Command Prompt):**

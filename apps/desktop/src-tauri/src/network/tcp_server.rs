@@ -52,6 +52,7 @@ impl ConnectionPool {
         map.is_empty()
     }
 
+    #[allow(dead_code)]
     pub fn count(&self) -> usize {
         let map = self.clients.lock().unwrap();
         map.len()
@@ -62,6 +63,7 @@ impl ConnectionPool {
         map.insert(device_id, stream);
     }
 
+    #[allow(dead_code)]
     pub fn remove(&self, device_id: &str) {
         let mut map = self.clients.lock().unwrap();
         map.remove(device_id);
@@ -615,6 +617,19 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
     }
 }
 
+fn create_tcp_listener(port: u16) -> std::io::Result<TcpListener> {
+    use socket2::{Domain, Socket, Type};
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, None)?;
+    let _ = socket.set_reuse_address(true);
+    let _ = socket.set_nonblocking(false);
+    let addr: std::net::SocketAddr = format!("0.0.0.0:{port}").parse().map_err(|e| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, e)
+    })?;
+    socket.bind(&addr.into())?;
+    socket.listen(128)?;
+    Ok(socket.into())
+}
+
 pub fn start_server(app_handle: Option<tauri::AppHandle>) {
     println!("==============================");
     println!("AetherLink TCP Server");
@@ -631,8 +646,22 @@ pub fn start_server(app_handle: Option<tauri::AppHandle>) {
         }
     };
 
-    let listener = TcpListener::bind(("0.0.0.0", PORT))
-        .expect("Failed to bind TCP port");
+    let mut retry_count = 0;
+    let listener = loop {
+        match create_tcp_listener(PORT) {
+            Ok(l) => break l,
+            Err(error) => {
+                if retry_count < 5 {
+                    retry_count += 1;
+                    eprintln!("Warning: Failed to bind TCP port {PORT} ({error}), retrying {retry_count}/5 in 1s...");
+                    std::thread::sleep(std::time::Duration::from_millis(1000));
+                } else {
+                    eprintln!("Error: Could not bind TCP server to port {PORT}: {error}");
+                    return;
+                }
+            }
+        }
+    };
 
     println!("Listening on port {PORT}...");
 
