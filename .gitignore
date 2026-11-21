@@ -6,9 +6,23 @@ Cargo.lock
 node_modules/
 dist/
 
+# Android
+.gradle/
+build/
+*/build/
+*/*/build/
+*.apk
+*.aab
+
+# Archives & Temporary
+*.zip
+*.tar.gz
+desktop/
+
 # IDE
 .vscode/
 .idea/
+*.iml
 
 # Logs
 *.log
@@ -21,5 +35,5 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Temporary files
+# Packaging
 *.deb

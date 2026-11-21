@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AetherLink
+GenericName=Device Companion & Sync
+Comment=Seamless device companion & clipboard/file sync between Laptop and Phone
+Exec=/home/revanth/AetherLink/launch-desktop.sh %U
+Icon=/home/revanth/AetherLink/apps/desktop/src-tauri/icons/icon.png
+Terminal=false
+Categories=Network;FileTransfer;
+StartupNotify=true
+StartupWMClass=desktop
+Keywords=sync;clipboard;aetherlink;phone;file;transfer;

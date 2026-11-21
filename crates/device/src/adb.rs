@@ -70,12 +70,16 @@ use crate::{Device, Platform};
 pub fn discover_devices() -> Vec<Device> {
     list_devices()
         .into_iter()
-        .map(|serial| Device {
-            id: serial.clone(),
-            name: model(&serial),
-            platform: Platform::Android,
-            battery: battery(&serial),
-            connected: true,
+        .map(|serial| {
+            Device::with_details(
+                serial.clone(),
+                model(&serial),
+                Platform::Android,
+                battery(&serial),
+                true,
+                None,
+                Some("USB/ADB".to_string()),
+            )
         })
         .collect()
 }

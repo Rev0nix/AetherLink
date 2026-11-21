@@ -19,4 +19,5 @@ pub use file::PhoneFile;
 pub use info::DeviceInfo;
 pub use device::{Device, Platform};
 pub use manager::DeviceManager;
+pub use pairing::{PairedDevice, PairingManager, PairingSession};
 pub use service::DeviceService;

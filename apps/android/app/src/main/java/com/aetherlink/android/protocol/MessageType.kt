@@ -1,14 +1,21 @@
 package com.aetherlink.android.protocol
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class MessageType {
     HELLO,
+    WELCOME,
     DEVICE_INFO,
-    PAIR_REQUEST,
-    PAIR_RESPONSE,
     PING,
     PONG,
-    FILE_TRANSFER,
+    PAIR_REQUEST,
+    PAIR_RESPONSE,
+    FILE_REQUEST,
+    FILE_CHUNK,
+    FILE_COMPLETE,
     CLIPBOARD,
     NOTIFICATION,
-    COMMAND
+    COMMAND,
+    ERROR
 }

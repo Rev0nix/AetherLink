@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Android Release APK
+        run: |
+          cd apps/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Prepare APK Artifact
+        run: |
+          mkdir -p release-android
+          if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
+            cp apps/android/app/build/outputs/apk/release/app-release.apk release-android/AetherLink.apk
+          elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp apps/android/app/build/outputs/apk/debug/app-debug.apk release-android/AetherLink.apk
+          fi
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherLink-Android
+          path: release-android/AetherLink.apk
+
+  build-desktop:
+    name: Build Desktop (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libxdo-dev \
+            libssl-dev \
+            build-essential \
+            curl \
+            wget \
+            file
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build Desktop Frontend
+        run: |
+          cd apps/desktop
+          npm ci
+          npm run build
+
+      - name: Build Desktop Release Binary
+        run: |
+          cargo build --release --bin desktop
+
+      - name: Package Standalone Tarball
+        run: |
+          mkdir -p release-desktop/aetherlink-desktop
+          cp target/release/desktop release-desktop/aetherlink-desktop/aetherlink
+          cp launch-desktop.sh release-desktop/aetherlink-desktop/
+          cp aetherlink.desktop release-desktop/aetherlink-desktop/
+          cp apps/desktop/src-tauri/icons/icon.png release-desktop/aetherlink-desktop/
+          chmod +x release-desktop/aetherlink-desktop/aetherlink release-desktop/aetherlink-desktop/launch-desktop.sh
+          
+          mkdir -p release-desktop/dist
+          tar -czvf release-desktop/dist/AetherLink-linux-x86_64.tar.gz -C release-desktop aetherlink-desktop
+
+      - name: Build Tauri Packages (.deb, .AppImage)
+        continue-on-error: true
+        run: |
+          cd apps/desktop
+          npx tauri build --bundles deb,appimage
+          find src-tauri/target/release/bundle -name "*.deb" -exec cp {} ../../release-desktop/dist/ \;
+          find src-tauri/target/release/bundle -name "*.AppImage" -exec cp {} ../../release-desktop/dist/ \;
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherLink-Desktop-Linux
+          path: release-desktop/dist/*
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-android, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AetherLink-Android
+          path: release-assets
+
+      - name: Download Desktop Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: AetherLink-Desktop-Linux
+          path: release-assets
+
+      - name: Determine Tag
+        id: vars
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v1.0.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: "AetherLink ${{ steps.vars.outputs.tag }}"
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -4,5 +4,6 @@ enum class DeviceState {
     DISCONNECTED,
     SEARCHING,
     FOUND,
+    PAIRING,
     CONNECTED
 }
