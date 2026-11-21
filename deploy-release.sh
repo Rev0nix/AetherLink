@@ -64,9 +64,9 @@ Universal device synchronization across Android, Windows, and Linux.
 
 | Order | Platform | Package File | Notes |
 |:---:|:---|:---|:---|
-| **1st** | 📱 **Android** | [**`1-AetherLink-Android.apk`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/1-AetherLink-Android.apk) | Android 8.0+ companion app |
-| **2nd** | 🪟 **Windows** | [**`2-AetherLink-Windows-Setup.exe`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/2-AetherLink-Windows-Setup.exe) | Windows 10/11 64-bit installer |
-| **3rd** | 🐧 **Linux** | [**`3-AetherLink-Linux.deb`**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/3-AetherLink-Linux.deb) | Ubuntu / Debian 64-bit package |
+| **1st** | 📱 **Android** | [**1-AetherLink-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/1-AetherLink-Android.apk) | Android 8.0+ companion app |
+| **2nd** | 🪟 **Windows** | [**2-AetherLink-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/2-AetherLink-Windows-Setup.exe) | Windows 10/11 64-bit installer |
+| **3rd** | 🐧 **Linux** | [**3-AetherLink-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/3-AetherLink-Linux.deb) | Ubuntu / Debian 64-bit package |
 
 ---
 
