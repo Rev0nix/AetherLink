@@ -1,212 +1,149 @@
-# 🚀 AetherLink
+AetherLink
 
-> **AI-Powered Cross-Platform Android Companion**
->
-> A modern desktop companion for Android built with **Rust**, **Tauri 2**, and **React**, focused on fast, secure, and intelligent device management.
+AetherLink is a modern, cross-platform ecosystem bridge designed to seamlessly connect your Android devices with your desktop environment. Built with performance and modularity in mind, it leverages Rust, Tauri, React, and Kotlin (Jetpack Compose) to deliver real-time synchronization, file transfers, screen mirroring, and AI-powered assistance across devices.
 
----
+🏗️ Architecture & Monorepo Overview
 
-## ✨ Overview
+AetherLink is structured as a multi-language monorepo containing native mobile/desktop applications and a modular Rust workspace:
 
-AetherLink is an open-source desktop application that enables seamless communication between your computer and Android devices.
-
-Unlike traditional device managers, AetherLink is designed with a modern architecture using Rust for performance and security while providing a beautiful cross-platform desktop experience through Tauri.
-
----
-
-## 🎯 Vision
-
-Build the next-generation Android companion that combines:
-
-- ⚡ Native performance
-- 🔒 Secure communication
-- 🤖 AI-powered automation
-- 🌐 Cross-platform compatibility
-- 📱 Multi-device management
-
----
-
-# ✨ Features
-
-## ✅ Current Features
-
-- 📱 Android device detection using ADB
-- 🔋 Live battery monitoring
-- 📊 Real-time device dashboard
-- 📄 Device Details page
-- 🔄 Auto-refresh device status
-- ⚙️ Rust backend services
-- 🖥️ Modern React + TypeScript UI
-
----
-
-## 🚧 Upcoming Features
-
-### 📂 File Management
-
-- Browse Android storage
-- Upload files
-- Download files
-- Drag & Drop transfer
-- File delete & rename
-
-### 📋 Clipboard
-
-- Clipboard sync
-- Copy/Paste between PC & Android
-
-### 🔔 Notifications
-
-- Notification mirroring
-- Reply from desktop
-
-### 🖥️ Screen
-
-- Screen mirroring
-- Remote control
-
-### 🤖 AI
-
-- AI assistant
-- Device automation
-- Smart workflows
-
----
-
-# 🏗️ Tech Stack
-
-## Backend
-
-- Rust
-- Tokio
-- Serde
-- ADB Integration
-
-## Desktop
-
-- Tauri 2
-- React
-- TypeScript
-- Zustand
-- React Router
-
-## Development
-
-- Cargo Workspace
-- Git
-- GitHub
-
----
-
-# 📁 Project Structure
-
-```text
 AetherLink/
-│
+├── .github/workflows/      # CI/CD pipelines (ci.yml, release.yml)
 ├── apps/
-│   └── desktop/
-│       ├── src/
-│       └── src-tauri/
-│
-├── crates/
-│   ├── core/
-│   ├── device/
-│   ├── network/
-│   ├── protocol/
-│   ├── crypto/
-│   ├── database/
-│   ├── streaming/
-│   ├── plugin/
-│   └── ai/
-│
-├── Cargo.toml
-└── README.md
-```
+│   ├── android/            # Native Android application (Kotlin + Jetpack Compose)
+│   └── desktop/            # Cross-platform Desktop app (Tauri + React + TypeScript)
+├── crates/                 # Shared Rust workspace libraries & core engine
+│   ├── ai/                 # AI assistant integration & processing
+│   ├── common/             # Shared models, constants, connection & device types
+│   ├── core/               # Application state, event bus, registry & core services
+│   ├── crypto/             # Encryption & secure pairing utilities
+│   ├── database/           # Local persistence & storage management
+│   ├── device/             # Device discovery, ADB bridge, pairing & lifecycle
+│   ├── network/            # Networking primitives & transport layers
+│   ├── plugin/             # Extensibility & plugin architecture
+│   ├── protocol/           # Wire protocol definitions & serialization
+│   ├── streaming/          # Screen mirroring & media streaming engine
+│   └── sync/               # Clipboard & notification synchronization logic
+├── aetherlink.desktop      # Linux desktop entry file
+├── Cargo.toml              # Root Rust workspace configuration
+├── deploy-release.sh       # Automated release deployment script
+└── launch-desktop.sh       # Helper script to launch the desktop client
 
----
 
-# 🚀 Getting Started
+✨ Key Features
 
-## Clone
+Based on the application modules across Android and Desktop, AetherLink provides:
 
-```bash
-git clone https://github.com/Rev0nix/AetherLink.git
+🔍 Automatic Device Discovery & Pairing:
 
-cd AetherLink
-```
+Local network discovery using NSD (Network Service Discovery / mDNS) and TCP sockets.
 
-## Install
+Quick QR Code scanning (QrCodeScannerHelper) and secure handshake pairing (PairingModal, PairingScreen).
 
-```bash
+Built-in ADB (Android Debug Bridge) integration (crates/device/src/adb.rs) for wired/wireless fallback and device management.
+
+📋 Universal Clipboard Sync:
+
+Two-way real-time clipboard synchronization across devices.
+
+Android Quick Settings Tile (ClipboardTileService), text selection context action (ProcessTextActivity), and floating sync bubble (FloatingSyncBubbleService).
+
+📁 Cross-Device File Explorer & Transfer:
+
+Browse Android storage directly from your desktop (FileExplorer.tsx) with breadcrumbs, context menus, and fast TCP file transfers.
+
+🔔 Notification Mirroring:
+
+Receive and manage Android notifications right on your desktop (Notifications.tsx, NotificationSyncScreen.kt).
+
+🖥️ Screen Mirroring:
+
+Low-latency device screen streaming (ScreenMirroringScreen.kt, crates/streaming).
+
+🤖 Built-in AI Assistant:
+
+Integrated AI assistant screen (AiAssistantScreen.kt, crates/ai) for smart cross-device workflows.
+
+🛠️ Tech Stack
+
+Desktop Client (apps/desktop)
+
+Framework: Tauri (Rust backend + Webview frontend)
+
+Frontend: React, TypeScript, Vite, Tailwind CSS
+
+Networking: Custom Rust TCP Server (tcp_server.rs) & mDNS/NSD discovery
+
+Android Client (apps/android)
+
+Language: Kotlin
+
+UI Toolkit: Jetpack Compose (Material 3 / Custom Aether Design System)
+
+Architecture: Clean Architecture (domain, feature, service, protocol, viewmodel)
+
+Background Services: Foreground AetherLinkService, DiscoveryService, FloatingSyncBubbleService, and ClipboardTileService
+
+Core Backend (crates/)
+
+Language: Rust (Cargo Workspace)
+
+Modules: Modular crate architecture separating protocol, cryptography, ADB handling, device registry, and streaming.
+
+🚀 Getting Started
+
+Prerequisites
+
+Rust & Cargo: Latest stable toolchain (rustup)
+
+Node.js & npm: Node.js v18+ (for the Desktop frontend)
+
+Android Studio / JDK 17+: For building and running the Android APK
+
+Tauri System Dependencies: Ensure platform-specific WebView/build libraries are installed (see Tauri Prerequisites).
+
+1. Running the Desktop Application
+
+Navigate to the desktop app directory, install dependencies, and start the Tauri development environment:
+
 cd apps/desktop
-
 npm install
-```
-
-## Run
-
-```bash
 npm run tauri dev
-```
 
----
 
-# 📸 Screenshots
+(Alternatively, on Linux/macOS, you can inspect and run the root helper script ./launch-desktop.sh.)
 
-> Screenshots coming soon.
+2. Building the Android Application
 
----
+Open apps/android in Android Studio, or build via Gradle from the terminal:
 
-# 🛣️ Roadmap
+cd apps/android
+./gradlew assembleDebug
 
-## Phase 1 ✅
 
-- Rust Workspace
-- Tauri Desktop
-- React Frontend
-- Android Detection
-- Live Dashboard
+Install the generated APK onto your Android device:
 
-## Phase 2 🚧
+adb install app/build/outputs/apk/debug/app-debug.apk
 
-- Device Details
-- Android File Explorer
-- File Transfer
 
-## Phase 3
+3. Building Rust Core Crates
 
-- Clipboard Sync
-- Notification Mirroring
-- Screen Mirroring
+To compile and verify all underlying Rust workspace crates from the root directory:
 
-## Phase 4
+cargo build --workspace
 
-- AI Assistant
-- Plugin System
-- Cloud Sync
 
----
+🔍 Architectural Observations & Notes
 
-# 🤝 Contributing
+During analysis of the repository structure, a few notable details stand out for contributors:
 
-Contributions, issues, and feature requests are welcome.
+Modular Stubs Ready for Expansion: Several crates in crates/ (such as ai, crypto, database, network, plugin, streaming, and sync) are currently structured as clean scaffolding (lib.rs stubs), while heavy lifting for TCP communication, pairing, and ADB is actively implemented in apps/desktop/src-tauri/src/ and crates/device/.
 
-Feel free to fork the repository and submit a Pull Request.
+Rich Android System Integration: The Android client goes beyond a standard app by integrating OS-level entry points (PROCESS_TEXT menu, Quick Settings Tile, and overlay FloatingSyncBubbleService).
 
----
+CI/CD Ready: Pre-configured GitHub Actions workflows (.github/workflows/ci.yml and release.yml) and deploy-release.sh are included for automated builds and packaging.
 
-# 📄 License
+License: The root LICENSE file is currently empty (0 bytes)—be sure to populate it with your chosen open-source or proprietary license before public distribution.
 
-Licensed under the MIT License.
+📄 License
 
----
-
-# 👨‍💻 Author
-
-**Revanth H M**
-
-GitHub: https://github.com/Rev0nix
-
----
-
-⭐ If you like this project, consider giving it a star!
+Distributed under the terms specified in the LICENSE file in the root directory.
