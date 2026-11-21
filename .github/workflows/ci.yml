@@ -44,18 +44,18 @@ jobs:
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
 
-      - name: Check Rust Workspace
-        run: cargo check --workspace
-
-      - name: Run Tests
-        run: cargo test --workspace
-
       - name: Build Desktop Frontend
         run: |
           cd apps/desktop
           npm ci
           npx tsc --noEmit
           npm run build
+
+      - name: Check Rust Workspace
+        run: cargo check --workspace
+
+      - name: Run Tests
+        run: cargo test --workspace
 
   check-workspace-windows:
     name: Check Rust & Desktop (Windows)
@@ -77,12 +77,6 @@ jobs:
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
 
-      - name: Check Rust Workspace (Windows)
-        run: cargo check --workspace
-
-      - name: Run Tests (Windows)
-        run: cargo test --workspace
-
       - name: Build Desktop Frontend
         shell: bash
         run: |
@@ -90,6 +84,12 @@ jobs:
           npm ci
           npx tsc --noEmit
           npm run build
+
+      - name: Check Rust Workspace (Windows)
+        run: cargo check --workspace
+
+      - name: Run Tests (Windows)
+        run: cargo test --workspace
 
   build-android:
     name: Build Android App
