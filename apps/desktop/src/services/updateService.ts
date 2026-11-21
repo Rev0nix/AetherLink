@@ -51,7 +51,7 @@ function isNewerVersion(latest: string, current: string): boolean {
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
-  currentVersion: "2.2.7",
+  currentVersion: "2.2.8",
   latestVersion: null,
   isUpdateAvailable: false,
   isChecking: false,

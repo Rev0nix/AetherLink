@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.2.7}"
+VERSION="${1:-v2.2.8}"
 echo "============================================="
 echo " Deploying AetherLink Release: $VERSION"
 echo "============================================="
@@ -18,19 +18,16 @@ fi
 
 if [ ! -f "2-AetherLink-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
-    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.3/2-AetherLink-Windows-Setup.exe" -o 2-AetherLink-Windows-Setup.exe || true
+    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.7/2-AetherLink-Windows-Setup.exe" -o 2-AetherLink-Windows-Setup.exe || true
 fi
 
-if [ ! -f "3-AetherLink-Linux.deb" ]; then
-    echo "--> Building Desktop Release Binary..."
-    (cd apps/desktop && npm run build)
-    cargo build --release --bin desktop
-    echo "--> Packaging Linux Debian (.deb) package..."
-    (cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
-    DEB_FILE=$(find target/ -type f -name "*.deb" | head -n 1)
-    if [ -n "$DEB_FILE" ]; then
-        cp "$DEB_FILE" ./3-AetherLink-Linux.deb
-    fi
+echo "--> Packaging Linux Debian (.deb) package..."
+(cd apps/desktop && npm run build)
+(cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
+DEB_FILE=$(ls -t target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
+if [ -n "$DEB_FILE" ]; then
+    echo "--> Copying newest Debian package: $DEB_FILE"
+    cp "$DEB_FILE" ./3-AetherLink-Linux.deb
 fi
 
 # 3. Push Git Tag to Trigger GitHub Actions Release
