@@ -41,16 +41,16 @@ jobs:
         run: |
           mkdir -p release-android
           if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-            cp apps/android/app/build/outputs/apk/release/app-release.apk release-android/1-AetherLink-Android.apk
+            cp apps/android/app/build/outputs/apk/release/app-release.apk release-android/VEXYRON-Android.apk
           elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp apps/android/app/build/outputs/apk/debug/app-debug.apk release-android/1-AetherLink-Android.apk
+            cp apps/android/app/build/outputs/apk/debug/app-debug.apk release-android/VEXYRON-Android.apk
           fi
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AetherLink-Android
-          path: release-android/1-AetherLink-Android.apk
+          name: VEXYRON-Android
+          path: release-android/VEXYRON-Android.apk
 
   build-desktop-linux:
     name: Build Desktop (Linux)
@@ -104,14 +104,14 @@ jobs:
           mkdir -p ../../release-desktop/dist
           DEB_FILE=$(find ../../target/ -type f -name "*.deb" | head -n 1)
           if [ -n "$DEB_FILE" ]; then
-            cp "$DEB_FILE" ../../release-desktop/dist/3-AetherLink-Linux.deb
+            cp "$DEB_FILE" ../../release-desktop/dist/VEXYRON-Linux.deb
           fi
 
       - name: Upload Desktop Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AetherLink-Desktop-Linux
-          path: release-desktop/dist/3-AetherLink-Linux.deb
+          name: VEXYRON-Desktop-Linux
+          path: release-desktop/dist/VEXYRON-Linux.deb
 
   build-desktop-windows:
     name: Build Desktop (Windows)
@@ -151,14 +151,14 @@ jobs:
           mkdir -p ../../release-windows/dist
           EXE_FILE=$(find ../../target/ -type f -name "*setup*.exe" | head -n 1)
           if [ -n "$EXE_FILE" ]; then
-            cp "$EXE_FILE" ../../release-windows/dist/2-AetherLink-Windows-Setup.exe
+            cp "$EXE_FILE" ../../release-windows/dist/VEXYRON-Windows-Setup.exe
           fi
 
       - name: Upload Desktop Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AetherLink-Desktop-Windows
-          path: release-windows/dist/2-AetherLink-Windows-Setup.exe
+          name: VEXYRON-Desktop-Windows
+          path: release-windows/dist/VEXYRON-Windows-Setup.exe
 
   publish-release:
     name: Publish GitHub Release
@@ -171,19 +171,19 @@ jobs:
       - name: Download Android Artifact
         uses: actions/download-artifact@v4
         with:
-          name: AetherLink-Android
+          name: VEXYRON-Android
           path: release-assets
 
       - name: Download Desktop Linux Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: AetherLink-Desktop-Linux
+          name: VEXYRON-Desktop-Linux
           path: release-assets
 
       - name: Download Desktop Windows Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: AetherLink-Desktop-Windows
+          name: VEXYRON-Desktop-Windows
           path: release-assets
 
       - name: Determine Tag
@@ -201,7 +201,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
-          name: "AetherLink ${{ steps.vars.outputs.tag }}"
+          name: "VEXYRON ${{ steps.vars.outputs.tag }}"
           generate_release_notes: true
           draft: false
           prerelease: false

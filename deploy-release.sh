@@ -6,21 +6,21 @@ echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
 
-rm -f ./1-AetherLink-Android.apk ./3-AetherLink-Linux.deb
+rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb
 
-if [ ! -f "1-AetherLink-Android.apk" ]; then
+if [ ! -f "VEXYRON-Android.apk" ]; then
     echo "--> Building Android APK..."
     (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
     if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-        cp apps/android/app/build/outputs/apk/release/app-release.apk ./1-AetherLink-Android.apk
+        cp apps/android/app/build/outputs/apk/release/app-release.apk ./VEXYRON-Android.apk
     elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-        cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./1-AetherLink-Android.apk
+        cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./VEXYRON-Android.apk
     fi
 fi
 
-if [ ! -f "2-AetherLink-Windows-Setup.exe" ]; then
+if [ ! -f "VEXYRON-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
-    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.7/2-AetherLink-Windows-Setup.exe" -o 2-AetherLink-Windows-Setup.exe || true
+    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.9/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
 fi
 
 echo "--> Packaging Linux Debian (.deb) package..."
@@ -29,7 +29,7 @@ echo "--> Packaging Linux Debian (.deb) package..."
 DEB_FILE=$(ls -t target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
 if [ -n "$DEB_FILE" ]; then
     echo "--> Copying newest Debian package: $DEB_FILE"
-    cp "$DEB_FILE" ./3-AetherLink-Linux.deb
+    cp "$DEB_FILE" ./VEXYRON-Linux.deb
 fi
 
 # 3. Push Git Tag to Trigger GitHub Actions Release
@@ -111,9 +111,9 @@ except urllib.error.HTTPError:
         rel_id = rel['id']
 
 files = [
-    ('1-AetherLink-Android.apk', 'application/vnd.android.package-archive'),
-    ('2-AetherLink-Windows-Setup.exe', 'application/vnd.microsoft.portable-executable'),
-    ('3-AetherLink-Linux.deb', 'application/vnd.debian.binary-package')
+    ('VEXYRON-Android.apk', 'application/vnd.android.package-archive'),
+    ('VEXYRON-Windows-Setup.exe', 'application/vnd.microsoft.portable-executable'),
+    ('VEXYRON-Linux.deb', 'application/vnd.debian.binary-package')
 ]
 
 existing_assets = {a['name']: a['id'] for a in rel.get('assets', [])}
