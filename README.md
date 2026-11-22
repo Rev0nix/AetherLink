@@ -76,7 +76,7 @@ Based on the latest repository updates:
 ## 🏗️ Complete Monorepo Architecture
 
 ```text
-AetherLink-main/
+VEXYRON-main/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                      # Automated Rust, Tauri, and Android CI checks
