@@ -49,10 +49,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.aetherlink.android.service.network.ConnectionManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -113,6 +115,8 @@ fun HomeScreen(
 
     val isConnected = vm.state == DeviceState.CONNECTED
     val desktopDevice = vm.devices.firstOrNull()
+    val hostOs by ConnectionManager.hostOs.collectAsState()
+    val hostName by ConnectionManager.hostName.collectAsState()
 
     var showIpDialog by remember { mutableStateOf(false) }
     val defaultIp = remember {
@@ -323,10 +327,19 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Column(modifier = Modifier.weight(1f, fill = false)) {
+                                val displayDeviceName = if (isConnected) {
+                                    if (hostName.isNotBlank() && hostName != "Laptop") {
+                                        "$hostName ($hostOs)"
+                                    } else if (hostOs != "Unknown") {
+                                        "VEXYRON $hostOs Laptop"
+                                    } else {
+                                        desktopDevice?.name ?: "VEXYRON Desktop"
+                                    }
+                                } else if (vm.devices.isNotEmpty()) vm.devices.first().name
+                                else "No Desktop Connected"
+
                                 Text(
-                                    text = if (isConnected) desktopDevice?.name ?: "VEXYRON Desktop"
-                                    else if (vm.devices.isNotEmpty()) vm.devices.first().name
-                                    else "No Desktop Connected",
+                                    text = displayDeviceName,
                                     color = AetherTextPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
@@ -335,7 +348,10 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = if (isConnected) "Linux / Windows • Wi-Fi LAN"
+                                    text = if (isConnected) {
+                                        if (hostOs != "Unknown") "Connected to $hostOs Laptop • Wi-Fi LAN"
+                                        else "Connected • Wi-Fi LAN"
+                                    }
                                     else if (vm.state == DeviceState.SEARCHING) "Scanning network on port 45876..."
                                     else "Tap Connect or enter IP to link",
                                     color = AetherTextMuted,
@@ -348,22 +364,44 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Status Badge: neatly positioned on the right
-                        AetherStatusBadge(
-                            text = when (vm.state) {
-                                DeviceState.CONNECTED -> "Online"
-                                DeviceState.SEARCHING -> "Scanning"
-                                DeviceState.FOUND -> "Available"
-                                DeviceState.PAIRING -> "Pairing"
-                                DeviceState.DISCONNECTED -> "Offline"
-                            },
-                            indicatorColor = when (vm.state) {
-                                DeviceState.CONNECTED -> AetherGreen
-                                DeviceState.SEARCHING, DeviceState.PAIRING -> AetherCyan
-                                DeviceState.FOUND -> AetherOrange
-                                DeviceState.DISCONNECTED -> AetherRed
+                        // Status Badge & OS Badge
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (isConnected && hostOs != "Unknown") {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4).copy(alpha = 0.2f) else AetherGreen.copy(alpha = 0.2f))
+                                        .border(1.dp, if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4) else AetherGreen, RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (hostOs.equals("Windows", ignoreCase = true)) "🪟 Windows" else "🐧 Linux",
+                                        color = if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF60CDFF) else AetherGreen,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
-                        )
+
+                            AetherStatusBadge(
+                                text = when (vm.state) {
+                                    DeviceState.CONNECTED -> "Online"
+                                    DeviceState.SEARCHING -> "Scanning"
+                                    DeviceState.FOUND -> "Available"
+                                    DeviceState.PAIRING -> "Pairing"
+                                    DeviceState.DISCONNECTED -> "Offline"
+                                },
+                                indicatorColor = when (vm.state) {
+                                    DeviceState.CONNECTED -> AetherGreen
+                                    DeviceState.SEARCHING, DeviceState.PAIRING -> AetherCyan
+                                    DeviceState.FOUND -> AetherOrange
+                                    DeviceState.DISCONNECTED -> AetherRed
+                                }
+                            )
+                        }
                     }
 
                     // Error Message notice if connection attempt failed

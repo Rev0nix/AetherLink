@@ -25,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import java.util.UUID
@@ -228,6 +230,13 @@ class HomeViewModel(
                             errorMessage = "Desktop did not return WELCOME greeting"
                         }
                         return@withContext
+                    } else {
+                        try {
+                            val helloObj = helloReply.payload as? JsonObject
+                            val os = (helloObj?.get("os") as? JsonPrimitive)?.content
+                            val hostname = (helloObj?.get("hostname") as? JsonPrimitive)?.content
+                            ConnectionManager.setHostInfo(os, hostname)
+                        } catch (_: Exception) {}
                     }
 
                     // 2. Send PAIR_REQUEST
@@ -249,6 +258,13 @@ class HomeViewModel(
                     Log.d("AetherLink", "PAIR_REQUEST reply: $pairReply")
 
                     if (pairReply?.type == MessageType.PAIR_RESPONSE) {
+                        try {
+                            val pairObj = pairReply.payload as? JsonObject
+                            val os = (pairObj?.get("os") as? JsonPrimitive)?.content
+                            val hostname = (pairObj?.get("hostname") as? JsonPrimitive)?.content
+                            ConnectionManager.setHostInfo(os, hostname)
+                        } catch (_: Exception) {}
+
                         val responsePayload: PairResponsePayload =
                             json.decodeFromJsonElement(pairReply.payload)
 
@@ -258,17 +274,30 @@ class HomeViewModel(
                                     Log.d("AetherLink", "Device already trusted!")
                                     ConnectionManager.onConnected(getApplication(), client)
 
+                                    val detectedOs = ConnectionManager.hostOs.value
+                                    val detectedHost = ConnectionManager.hostName.value
+                                    val friendlyName = if (detectedHost.isNotBlank() && detectedHost != "Laptop") {
+                                        "$detectedHost ($detectedOs)"
+                                    } else if (detectedOs != "Unknown") {
+                                        "VEXYRON Desktop ($detectedOs)"
+                                    } else {
+                                        targetDevice.name
+                                    }
+
                                     // Save last connected IP
                                     getApplication<Application>()
                                         .getSharedPreferences("aetherlink_prefs", Context.MODE_PRIVATE)
                                         .edit()
                                         .putString("last_connected_ip", targetDevice.ipAddress)
-                                        .putString("last_connected_name", targetDevice.name)
+                                        .putString("last_connected_name", friendlyName)
                                         .apply()
 
                                     devices = devices.map {
-                                        if (it.id == targetDevice.id) it.copy(isConnected = true)
-                                        else it.copy(isConnected = false)
+                                        if (it.id == targetDevice.id) it.copy(
+                                            isConnected = true,
+                                            name = friendlyName,
+                                            os = detectedOs
+                                        ) else it.copy(isConnected = false)
                                     }
                                     state = DeviceState.CONNECTED
                                     errorMessage = null
@@ -335,6 +364,13 @@ class HomeViewModel(
 
                     withContext(Dispatchers.Main) {
                         if (reply?.type == MessageType.PAIR_RESPONSE) {
+                            try {
+                                val replyObj = reply.payload as? JsonObject
+                                val os = (replyObj?.get("os") as? JsonPrimitive)?.content
+                                val hostname = (replyObj?.get("hostname") as? JsonPrimitive)?.content
+                                ConnectionManager.setHostInfo(os, hostname)
+                            } catch (_: Exception) {}
+
                             val payload: PairResponsePayload =
                                 json.decodeFromJsonElement(reply.payload)
 
@@ -342,17 +378,27 @@ class HomeViewModel(
                                 Log.d("AetherLink", "Pairing confirmed!")
                                 ConnectionManager.onConnected(getApplication(), client)
 
+                                val detectedOs = ConnectionManager.hostOs.value
+                                val detectedHost = ConnectionManager.hostName.value
+                                val friendlyName = if (detectedHost.isNotBlank() && detectedHost != "Laptop") {
+                                    "$detectedHost ($detectedOs)"
+                                } else if (detectedOs != "Unknown") {
+                                    "VEXYRON Desktop ($detectedOs)"
+                                } else {
+                                    "VEXYRON Desktop"
+                                }
+
                                 // Save last connected IP
                                 devices.firstOrNull()?.let { d ->
                                     getApplication<Application>()
                                         .getSharedPreferences("aetherlink_prefs", Context.MODE_PRIVATE)
                                         .edit()
                                         .putString("last_connected_ip", d.ipAddress)
-                                        .putString("last_connected_name", d.name)
+                                        .putString("last_connected_name", friendlyName)
                                         .apply()
                                 }
 
-                                devices = devices.map { it.copy(isConnected = true) }
+                                devices = devices.map { it.copy(isConnected = true, name = friendlyName, os = detectedOs) }
                                 state = DeviceState.CONNECTED
                                 pairingPin = null
                                 errorMessage = null

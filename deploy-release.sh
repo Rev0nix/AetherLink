@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.2}"
+VERSION="${1:-v2.3.3}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -93,21 +93,20 @@ sudo apt install ./VEXYRON-Linux.deb
 
 ### 🌟 What's New in {tag}
 
-- 💻 **Android Remote Laptop Terminal**:
-  Connect your phone to your laptop (Windows or Linux) to execute terminal commands in real-time right from your phone. Features live directory navigation (`cd`), auto-scrolling output, quick command chips, history recall, and host status badges.
+- ⚡ **Fixed Remote Terminal Socket Delivery**:
+  Resolved "Failed to deliver command to desktop socket" by ensuring commands and session initialization are dispatched asynchronously on background I/O threads, eliminating network on main thread exceptions.
+- 🔍 **Automatic OS Recognition (Linux vs Windows)**:
+  When your phone connects to your laptop, both the phone and laptop automatically recognize whether the host is Linux or Windows. Includes custom badges, host details, tailored prompts (`PS path>` for Windows vs `user@host:path$` for Linux), and dynamic quick command toolbars.
+- 🪟 **Standard Windowed Mode (Non-Fullscreen)**:
+  Completely disabled full-screen takeover on both desktop and Android. Restores standard window decorations and system bar padding (status bar & navigation bar) without clipping or immersive lock.
+- 💻 **Cross-Platform Remote Laptop Terminal**:
+  Connect phone to laptop to execute shell commands with live working directory tracking (`cd`), output buffering, and history recall.
 - 🛡️ **Universal Linux Firewall Helper**:
-  Settings and Devices screens now include tailored firewall rules for **all Linux distributions**:
-  - **UFW** (Ubuntu, Debian, Linux Mint, Pop!_OS)
-  - **Firewalld** (Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux)
-  - **iptables** (Arch Linux, Manjaro, generic kernels)
-  - **openSUSE** (openSUSE Leap & Tumbleweed)
-  - **nftables** (Debian 12+, Alpine, NixOS)
+  Comprehensive firewall configuration for UFW, Firewalld, iptables, openSUSE, and nftables.
 - 📜 **PolyForm Noncommercial License 1.0.0**:
-  Added the official PolyForm Noncommercial License to the repository and all client application settings.
-- 🔧 **Resolved Debian Package Upgrade Conflict**:
-  Fixed the installation error `trying to overwrite '/usr/bin/desktop', which is also in package aether-link 2.2.8`. The package now installs `/usr/bin/vexyron` and declares `replaces: ["aether-link", "aetherlink", "desktop"]`, `conflicts: ["aether-link", "aetherlink"]`, and `provides: ["aether-link", "aetherlink"]`.
-- 📦 **Streamlined 3-Application Release**:
-  Dedicated packages for Android, Windows, and Linux laptops with no extra confusion.
+  Added the official PolyForm Noncommercial License across the project.
+- 📦 **Strictly 3 Official Applications**:
+  Android (`VEXYRON-Android.apk`), Windows (`VEXYRON-Windows-Setup.exe`), and Linux (`VEXYRON-Linux.deb`).
 """
 
 try:

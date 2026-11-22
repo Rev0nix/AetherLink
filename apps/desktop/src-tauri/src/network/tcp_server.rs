@@ -206,14 +206,28 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                 let request_id = message.request_id.clone();
 
                 let response = match message.message_type {
-                    MessageType::Hello => Message::new(
-                        MessageType::Welcome,
-                        request_id,
-                        json!({
-                            "name": "VEXYRON Desktop",
-                            "version": "1.0.0"
-                        }),
-                    ),
+                    MessageType::Hello => {
+                        let os_type = if cfg!(target_os = "windows") {
+                            "Windows"
+                        } else if cfg!(target_os = "macos") {
+                            "macOS"
+                        } else {
+                            "Linux"
+                        };
+                        let host_name = whoami_info();
+
+                        Message::new(
+                            MessageType::Welcome,
+                            request_id,
+                            json!({
+                                "name": "VEXYRON Desktop",
+                                "version": "2.3.3",
+                                "os": os_type,
+                                "platform": os_type,
+                                "hostname": host_name
+                            }),
+                        )
+                    }
 
                     MessageType::Ping => Message::new(
                         MessageType::Pong,
@@ -281,13 +295,25 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                                             let _ = handle.emit("devices-updated", json!({}));
                                         }
 
+                                        let os_type = if cfg!(target_os = "windows") {
+                                            "Windows"
+                                        } else if cfg!(target_os = "macos") {
+                                            "macOS"
+                                        } else {
+                                            "Linux"
+                                        };
+                                        let host_name = whoami_info();
+
                                         Message::new(
                                             MessageType::PairResponse,
                                             request_id,
                                             json!({
                                                 "status": "CONFIRMED",
                                                 "pin": null,
-                                                "message": "Device successfully paired and trusted"
+                                                "message": "Device successfully paired and trusted",
+                                                "os": os_type,
+                                                "platform": os_type,
+                                                "hostname": host_name
                                             }),
                                         )
                                     } else {
@@ -334,13 +360,25 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                                         let _ = handle.emit("devices-updated", json!({}));
                                     }
 
+                                    let os_type = if cfg!(target_os = "windows") {
+                                        "Windows"
+                                    } else if cfg!(target_os = "macos") {
+                                        "macOS"
+                                    } else {
+                                        "Linux"
+                                    };
+                                    let host_name = whoami_info();
+
                                     Message::new(
                                         MessageType::PairResponse,
                                         request_id,
                                         json!({
                                             "status": "PAIRED",
                                             "pin": null,
-                                            "message": "Device is already trusted"
+                                            "message": "Device is already trusted",
+                                            "os": os_type,
+                                            "platform": os_type,
+                                            "hostname": host_name
                                         }),
                                     )
                                 } else {
@@ -358,13 +396,25 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                                         );
                                     }
 
+                                    let os_type = if cfg!(target_os = "windows") {
+                                        "Windows"
+                                    } else if cfg!(target_os = "macos") {
+                                        "macOS"
+                                    } else {
+                                        "Linux"
+                                    };
+                                    let host_name = whoami_info();
+
                                     Message::new(
                                         MessageType::PairResponse,
                                         request_id,
                                         json!({
                                             "status": "PENDING",
                                             "pin": pin,
-                                            "message": "Verification code generated"
+                                            "message": "Verification code generated",
+                                            "os": os_type,
+                                            "platform": os_type,
+                                            "hostname": host_name
                                         }),
                                     )
                                 }
@@ -702,12 +752,23 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                             stderr_text.push_str("\n... [Error output truncated at 64 KB] ...");
                         }
 
+                        let os_type = if cfg!(target_os = "windows") {
+                            "Windows"
+                        } else if cfg!(target_os = "macos") {
+                            "macOS"
+                        } else {
+                            "Linux"
+                        };
+
                         let out_payload = json!({
                             "command": cmd_trimmed,
                             "stdout": stdout_text,
                             "stderr": stderr_text,
                             "exit_code": exit_code,
-                            "cwd": session_cwd.to_string_lossy().to_string()
+                            "cwd": session_cwd.to_string_lossy().to_string(),
+                            "os": os_type,
+                            "platform": os_type,
+                            "hostname": whoami_info()
                         });
 
                         if let Some(ref handle) = app_handle {

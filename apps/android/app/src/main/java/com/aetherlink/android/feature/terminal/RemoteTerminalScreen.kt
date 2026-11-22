@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -85,6 +87,8 @@ fun RemoteTerminalScreen(
     val cwd by TerminalManager.cwd.collectAsState()
     val isExecuting by TerminalManager.isExecuting.collectAsState()
     val history by TerminalManager.history.collectAsState()
+    val hostOs by ConnectionManager.hostOs.collectAsState()
+    val hostName by ConnectionManager.hostName.collectAsState()
     val isConnected = vm.state == DeviceState.CONNECTED && ConnectionManager.isConnected
 
     var commandInput by remember { mutableStateOf("") }
@@ -108,6 +112,8 @@ fun RemoteTerminalScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .background(Color(0xFF090D16))
     ) {
         // 1. TOP APP BAR
@@ -165,11 +171,32 @@ fun RemoteTerminalScreen(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = if (isConnected) "Connected • Windows & Linux" else "Disconnected",
+                                text = if (isConnected) {
+                                    val osStr = if (hostOs != "Unknown") hostOs else "Laptop"
+                                    val nameStr = if (hostName.isNotBlank() && hostName != "Laptop") " ($hostName)" else ""
+                                    "Connected • $osStr$nameStr"
+                                } else "Disconnected",
                                 color = if (isConnected) AetherGreen else AetherTextMuted,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
                             )
+                            if (isConnected && hostOs != "Unknown") {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4).copy(alpha = 0.25f) else AetherGreen.copy(alpha = 0.25f))
+                                        .border(1.dp, if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4) else AetherGreen, RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = if (hostOs.equals("Windows", ignoreCase = true)) "Windows" else "Linux",
+                                        color = if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF60CDFF) else AetherGreen,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -263,10 +290,20 @@ fun RemoteTerminalScreen(
         }
 
         // 4. QUICK COMMAND CHIPS TOOLBAR
-        val quickCommands = listOf(
-            "ls -la", "pwd", "git status", "whoami", "uname -a",
-            "dir", "ipconfig", "uptime", "cd ..", "cd ~", "clear"
-        )
+        val isWindows = hostOs.equals("Windows", ignoreCase = true)
+        val quickCommands = remember(isWindows) {
+            if (isWindows) {
+                listOf(
+                    "dir", "pwd", "ipconfig", "whoami", "hostname",
+                    "systeminfo", "Get-Process", "cd ..", "cd ~", "cls"
+                )
+            } else {
+                listOf(
+                    "ls -la", "pwd", "whoami", "uname -a", "df -h",
+                    "free -m", "uptime", "git status", "cd ..", "cd ~", "clear"
+                )
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -311,10 +348,11 @@ fun RemoteTerminalScreen(
         ) {
             Column {
                 // Host CWD indicator
+                val promptPrefix = if (hostOs.equals("Windows", ignoreCase = true)) "PS $cwd>" else "host:$cwd$"
                 Text(
-                    text = "host:$cwd",
-                    color = AetherTextMuted,
-                    fontSize = 10.sp,
+                    text = promptPrefix,
+                    color = AetherCyan,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -377,7 +415,7 @@ fun RemoteTerminalScreen(
                         },
                         placeholder = {
                             Text(
-                                "Enter shell command...",
+                                if (hostOs.equals("Windows", ignoreCase = true)) "Enter PowerShell command..." else "Enter Linux / bash command...",
                                 color = AetherTextMuted,
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace

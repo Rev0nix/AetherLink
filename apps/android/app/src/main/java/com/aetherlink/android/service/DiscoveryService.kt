@@ -81,7 +81,7 @@ class DiscoveryService(
                     Log.d("AetherLink", "Subnet probe hit AetherLink server at $ip:$port")
                     Device(
                         id = "$ip:$port",
-                        name = "AetherLink Desktop ($ip)",
+                        name = "VEXYRON Desktop ($ip)",
                         ipAddress = ip,
                         isConnected = false
                     )
@@ -104,7 +104,7 @@ class DiscoveryService(
                 foundDevices.add(
                     Device(
                         id = "10.0.2.2:45876",
-                        name = "AetherLink Desktop (Host PC)",
+                        name = "VEXYRON Desktop (Host PC)",
                         ipAddress = "10.0.2.2",
                         isConnected = false
                     )
@@ -120,7 +120,7 @@ class DiscoveryService(
                 foundDevices.add(
                     Device(
                         id = "$defaultLanIp:45876",
-                        name = "AetherLink Desktop (Linux)",
+                        name = "VEXYRON Desktop",
                         ipAddress = defaultLanIp,
                         isConnected = false
                     )
@@ -133,11 +133,11 @@ class DiscoveryService(
         val lastIp = prefs.getString("last_connected_ip", null)
         if (!lastIp.isNullOrBlank() && foundDevices.none { it.ipAddress == lastIp }) {
             if (probeHost(lastIp, 45876, 600)) {
-                val lastName = prefs.getString("last_connected_name", "AetherLink Desktop (Saved)")
+                val lastName = prefs.getString("last_connected_name", "VEXYRON Desktop (Saved)")
                 foundDevices.add(
                     Device(
                         id = "$lastIp:45876",
-                        name = lastName ?: "AetherLink Desktop",
+                        name = lastName ?: "VEXYRON Desktop",
                         ipAddress = lastIp,
                         isConnected = false
                     )

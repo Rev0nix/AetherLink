@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import com.aetherlink.android.core.designsystem.AetherTextPrimary
 import com.aetherlink.android.core.designsystem.AetherTextSecondary
 import com.aetherlink.android.domain.model.Device
 import com.aetherlink.android.domain.model.DeviceState
+import com.aetherlink.android.service.network.ConnectionManager
 import com.aetherlink.android.ui.navigation.Screen
 import com.aetherlink.android.viewmodel.HomeViewModel
 
@@ -300,10 +302,33 @@ fun DeviceItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                AetherStatusBadge(
-                    text = if (isConnected) "Connected" else "Available",
-                    indicatorColor = if (isConnected) AetherGreen else AetherCyan
-                )
+                val hostOs = if (device.os != "Unknown") device.os else ConnectionManager.hostOs.value
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (isConnected && hostOs != "Unknown") {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4).copy(alpha = 0.2f) else AetherGreen.copy(alpha = 0.2f))
+                                .border(1.dp, if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4) else AetherGreen, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = if (hostOs.equals("Windows", ignoreCase = true)) "Windows" else "Linux",
+                                color = if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF60CDFF) else AetherGreen,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    AetherStatusBadge(
+                        text = if (isConnected) "Connected" else "Available",
+                        indicatorColor = if (isConnected) AetherGreen else AetherCyan
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

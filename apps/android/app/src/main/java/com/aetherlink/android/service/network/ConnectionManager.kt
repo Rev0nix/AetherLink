@@ -102,6 +102,26 @@ object ConnectionManager {
     private val _connectionState = MutableStateFlow(false)
     val connectionState: StateFlow<Boolean> = _connectionState.asStateFlow()
 
+    private val _hostOs = MutableStateFlow("Unknown")
+    val hostOs: StateFlow<String> = _hostOs.asStateFlow()
+
+    private val _hostName = MutableStateFlow("Laptop")
+    val hostName: StateFlow<String> = _hostName.asStateFlow()
+
+    fun setHostInfo(os: String?, name: String?) {
+        if (!os.isNullOrBlank()) {
+            _hostOs.value = when {
+                os.contains("win", ignoreCase = true) -> "Windows"
+                os.contains("linux", ignoreCase = true) -> "Linux"
+                os.contains("mac", ignoreCase = true) -> "macOS"
+                else -> os
+            }
+        }
+        if (!name.isNullOrBlank()) {
+            _hostName.value = name
+        }
+    }
+
     private val _clipboardHistory = MutableStateFlow<List<AndroidClipboardItem>>(emptyList())
     val clipboardHistory: StateFlow<List<AndroidClipboardItem>> = _clipboardHistory.asStateFlow()
 
@@ -153,6 +173,8 @@ object ConnectionManager {
         isManualDisconnect = true
         isConnected = false
         _connectionState.value = false
+        _hostOs.value = "Unknown"
+        _hostName.value = "Laptop"
 
         stopKeepAlive()
         stopListening()
@@ -285,6 +307,13 @@ object ConnectionManager {
                             val helloReply = testClient.receive()
 
                             if (helloReply?.type == MessageType.WELCOME) {
+                                try {
+                                    val helloObj = helloReply.payload as? JsonObject
+                                    val os = (helloObj?.get("os") as? JsonPrimitive)?.content
+                                    val hostname = (helloObj?.get("hostname") as? JsonPrimitive)?.content
+                                    setHostInfo(os, hostname)
+                                } catch (_: Exception) {}
+
                                 // 2. Send PAIR_REQUEST (already paired/trusted device)
                                 val pairReq = Message(
                                     type = MessageType.PAIR_REQUEST,
@@ -302,6 +331,12 @@ object ConnectionManager {
                                 val pairReply = testClient.receive()
 
                                 if (pairReply?.type == MessageType.PAIR_RESPONSE) {
+                                    try {
+                                        val pairObj = pairReply.payload as? JsonObject
+                                        val os = (pairObj?.get("os") as? JsonPrimitive)?.content
+                                        val hostname = (pairObj?.get("hostname") as? JsonPrimitive)?.content
+                                        setHostInfo(os, hostname)
+                                    } catch (_: Exception) {}
                                     val resp: PairResponsePayload = json.decodeFromJsonElement(pairReply.payload)
                                     if (resp.status == PairStatus.PAIRED || resp.status == PairStatus.CONFIRMED) {
                                         Log.d("ConnectionManager", "Auto-reconnect successful!")
@@ -508,6 +543,11 @@ object ConnectionManager {
                     val stderr = (payloadObj?.get("stderr") as? JsonPrimitive)?.content ?: ""
                     val exitCode = (payloadObj?.get("exit_code") as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
                     val cwd = (payloadObj?.get("cwd") as? JsonPrimitive)?.content ?: ""
+                    val os = (payloadObj?.get("os") as? JsonPrimitive)?.content
+                    val hostname = (payloadObj?.get("hostname") as? JsonPrimitive)?.content
+                    if (!os.isNullOrBlank() || !hostname.isNullOrBlank()) {
+                        setHostInfo(os, hostname)
+                    }
 
                     com.aetherlink.android.service.terminal.TerminalManager.onTerminalOutput(
                         command = cmd,
@@ -722,6 +762,25 @@ object ConnectionManager {
             true
         } catch (e: Exception) {
             Log.e("ConnectionManager", "Failed to send file complete", e)
+            false
+        }
+    }
+
+    suspend fun sendTerminalCommand(command: String, cwd: String): Boolean = withContext(Dispatchers.IO) {
+        val c = client ?: return@withContext false
+        if (!c.isConnected()) return@withContext false
+        try {
+            val message = Message(
+                type = MessageType.TERMINAL_EXEC,
+                requestId = UUID.randomUUID().toString(),
+                payload = buildJsonObject {
+                    put("command", command)
+                    put("cwd", cwd)
+                }
+            )
+            c.send(message)
+        } catch (e: Exception) {
+            Log.e("ConnectionManager", "Failed to send terminal command: ${e.message}")
             false
         }
     }

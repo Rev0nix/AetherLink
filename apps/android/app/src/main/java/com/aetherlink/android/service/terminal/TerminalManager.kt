@@ -1,14 +1,14 @@
 package com.aetherlink.android.service.terminal
 
 import android.util.Log
-import com.aetherlink.android.protocol.Message
-import com.aetherlink.android.protocol.MessageType
 import com.aetherlink.android.service.network.ConnectionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 enum class TerminalEntryType {
@@ -50,15 +50,9 @@ object TerminalManager {
     fun initSession() {
         if (ConnectionManager.isConnected) {
             // Request host info and current working directory
-            val msg = Message(
-                type = MessageType.TERMINAL_EXEC,
-                requestId = UUID.randomUUID().toString(),
-                payload = buildJsonObject {
-                    put("command", "")
-                    put("cwd", _cwd.value)
-                }
-            )
-            ConnectionManager.client?.send(msg)
+            CoroutineScope(Dispatchers.IO).launch {
+                ConnectionManager.sendTerminalCommand("", _cwd.value)
+            }
         }
     }
 
@@ -77,8 +71,13 @@ object TerminalManager {
         currentHistory.add(trimmed)
         _history.value = currentHistory
 
-        // Append input prompt
-        val prompt = "${_cwd.value}$ $trimmed"
+        // Append input prompt based on host OS
+        val hostOs = ConnectionManager.hostOs.value
+        val prompt = if (hostOs.equals("Windows", ignoreCase = true)) {
+            "${_cwd.value}> $trimmed"
+        } else {
+            "${_cwd.value}$ $trimmed"
+        }
         val currentEntries = _entries.value.toMutableList()
         currentEntries.add(TerminalEntry(type = TerminalEntryType.INPUT, text = prompt))
         _entries.value = currentEntries
@@ -96,25 +95,21 @@ object TerminalManager {
 
         _isExecuting.value = true
 
-        val msg = Message(
-            type = MessageType.TERMINAL_EXEC,
-            requestId = UUID.randomUUID().toString(),
-            payload = buildJsonObject {
-                put("command", trimmed)
-                put("cwd", _cwd.value)
+        CoroutineScope(Dispatchers.IO).launch {
+            val ok = ConnectionManager.sendTerminalCommand(trimmed, _cwd.value)
+            if (!ok) {
+                withContext(Dispatchers.Main) {
+                    _isExecuting.value = false
+                    val failedEntries = _entries.value.toMutableList()
+                    failedEntries.add(
+                        TerminalEntry(
+                            type = TerminalEntryType.STDERR,
+                            text = "Failed to deliver command to desktop socket. Check that laptop app is running."
+                        )
+                    )
+                    _entries.value = failedEntries
+                }
             }
-        )
-
-        val ok = ConnectionManager.client?.send(msg) ?: false
-        if (!ok) {
-            _isExecuting.value = false
-            currentEntries.add(
-                TerminalEntry(
-                    type = TerminalEntryType.STDERR,
-                    text = "Failed to deliver command to desktop socket."
-                )
-            )
-            _entries.value = currentEntries
         }
     }
 
@@ -156,10 +151,17 @@ object TerminalManager {
     }
 
     fun clear() {
+        val hostOs = ConnectionManager.hostOs.value
+        val hostName = ConnectionManager.hostName.value
+        val banner = if (hostOs != "Unknown") {
+            "VEXYRON Remote Terminal ($hostOs)\nHost: $hostName | Working Dir: ${_cwd.value}"
+        } else {
+            "Console cleared. Host: ${_cwd.value}"
+        }
         _entries.value = listOf(
             TerminalEntry(
                 type = TerminalEntryType.SYSTEM,
-                text = "Console cleared. Host: ${_cwd.value}"
+                text = banner
             )
         )
     }
