@@ -95,32 +95,17 @@ jobs:
 
       - name: Build Desktop Release Binary
         run: |
-          cargo build --release --bin desktop
+          cargo build --release --bin vexyron
 
-      - name: Build Tauri Desktop Packages (.deb and .AppImage)
+      - name: Build Tauri Desktop Package (.deb)
         run: |
           cd apps/desktop
-          npx tauri build --bundles deb,appimage --ignore-version-mismatches || npx tauri build --bundles deb --ignore-version-mismatches
+          npx tauri build --bundles deb --ignore-version-mismatches
           mkdir -p ../../release-desktop/dist
           DEB_FILE=$(ls -t ../../target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
-          APPIMAGE_FILE=$(ls -t ../../target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1)
           if [ -n "$DEB_FILE" ]; then
             cp "$DEB_FILE" ../../release-desktop/dist/VEXYRON-Linux.deb
           fi
-          if [ -n "$APPIMAGE_FILE" ]; then
-            cp "$APPIMAGE_FILE" ../../release-desktop/dist/VEXYRON-Linux.AppImage
-          fi
-
-      - name: Package Standalone Tarball for Linux
-        run: |
-          mkdir -p release-desktop/vexyron-desktop
-          cp target/release/desktop release-desktop/vexyron-desktop/vexyron
-          cp launch-desktop.sh release-desktop/vexyron-desktop/
-          cp install-desktop.sh release-desktop/vexyron-desktop/
-          cp vexyron.desktop release-desktop/vexyron-desktop/
-          cp aetherlink-app-icon.png release-desktop/vexyron-desktop/icon.png
-          chmod +x release-desktop/vexyron-desktop/vexyron release-desktop/vexyron-desktop/launch-desktop.sh release-desktop/vexyron-desktop/install-desktop.sh
-          tar -czvf release-desktop/dist/VEXYRON-Linux-x86_64.tar.gz -C release-desktop vexyron-desktop
 
       - name: Upload Desktop Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -156,7 +141,7 @@ jobs:
           npm run build
 
       - name: Build Desktop Release Binary
-        run: cargo build --release --bin desktop
+        run: cargo build --release --bin vexyron
 
       - name: Build Tauri Windows Installer (.exe)
         shell: bash
@@ -169,22 +154,11 @@ jobs:
             cp "$EXE_FILE" ../../release-windows/dist/VEXYRON-Windows-Setup.exe
           fi
 
-      - name: Package Standalone Portable Zip for Windows
-        shell: bash
-        run: |
-          mkdir -p release-windows/vexyron-windows
-          cp target/release/desktop.exe release-windows/vexyron-windows/VEXYRON.exe
-          cp launch-desktop.bat release-windows/vexyron-windows/
-          cp launch-desktop.ps1 release-windows/vexyron-windows/
-          cp apps/desktop/src-tauri/icons/icon.ico release-windows/vexyron-windows/
-          cd release-windows
-          7z a dist/VEXYRON-Windows-Portable.zip vexyron-windows/
-
       - name: Upload Desktop Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: VEXYRON-Desktop-Windows
-          path: release-windows/dist/*
+          path: release-windows/dist/VEXYRON-Windows-Setup.exe
 
   publish-release:
     name: Publish GitHub Release

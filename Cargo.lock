@@ -769,28 +769,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "desktop"
-version = "2.3.1"
-dependencies = [
- "aether_core",
- "arboard",
- "base64 0.22.1",
- "chrono",
- "device",
- "dirs",
- "mdns-sd",
- "protocol",
- "serde",
- "serde_json",
- "socket2 0.5.10",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "uuid",
-]
-
-[[package]]
 name = "device"
 version = "0.1.0"
 dependencies = [
@@ -4457,6 +4435,28 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vexyron"
+version = "2.3.2"
+dependencies = [
+ "aether_core",
+ "arboard",
+ "base64 0.22.1",
+ "chrono",
+ "device",
+ "dirs",
+ "mdns-sd",
+ "protocol",
+ "serde",
+ "serde_json",
+ "socket2 0.5.10",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "uuid",
+]
 
 [[package]]
 name = "vswhom"

@@ -28,6 +28,7 @@ sealed class Screen(
     data object Mirroring : Screen("mirroring", "Screen Mirror")
     data object Clipboard : Screen("clipboard", "Clipboard Sync")
     data object Notifications : Screen("notifications", "Notifications")
+    data object Terminal : Screen("terminal", "Remote Terminal")
 
     companion object {
         val bottomBarTabs = listOf(Home, Devices, Files, Assistant, Settings)

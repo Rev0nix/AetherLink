@@ -23,6 +23,7 @@ import com.aetherlink.android.feature.onboarding.OnboardingScreen
 import com.aetherlink.android.feature.pairing.PairingScreen
 import com.aetherlink.android.feature.settings.SettingsScreen
 import com.aetherlink.android.feature.splash.SplashScreen
+import com.aetherlink.android.feature.terminal.RemoteTerminalScreen
 import com.aetherlink.android.viewmodel.HomeViewModel
 
 @Composable
@@ -112,6 +113,11 @@ fun AppNavigation() {
             // 11. Notification Sync Screen
             composable(Screen.Notifications.route) {
                 NotificationSyncScreen(navController = navController)
+            }
+
+            // 12. Remote Terminal Screen
+            composable(Screen.Terminal.route) {
+                RemoteTerminalScreen(navController = navController, vm = sharedHomeViewModel)
             }
         }
     }

@@ -46,7 +46,25 @@ pub enum MessageType {
     Clipboard,
     Notification,
     Command,
+    TerminalExec,
+    TerminalOutput,
     Error,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminalExecPayload {
+    pub command: String,
+    #[serde(default)]
+    pub cwd: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminalOutputPayload {
+    pub command: String,
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: i32,
+    pub cwd: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

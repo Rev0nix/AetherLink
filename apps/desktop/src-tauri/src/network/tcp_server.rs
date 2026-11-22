@@ -2,7 +2,7 @@ use base64::prelude::*;
 use device::{Device, DeviceManager, PairingManager, Platform};
 use protocol::{
     ClipboardPayload, FileChunkPayload, FileCompletePayload, FileTransferRequest, Message,
-    MessageType, NotificationPayload, PairRequestPayload,
+    MessageType, NotificationPayload, PairRequestPayload, TerminalExecPayload,
 };
 use serde_json::json;
 use std::collections::HashMap;
@@ -136,6 +136,16 @@ pub fn get_downloads_dir() -> PathBuf {
     }
 }
 
+fn whoami_info() -> String {
+    let user = std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .unwrap_or_else(|_| "user".to_string());
+    let host = std::env::var("HOSTNAME")
+        .or_else(|_| std::env::var("COMPUTERNAME"))
+        .unwrap_or_else(|_| "localhost".to_string());
+    format!("{}@{}", user, host)
+}
+
 fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
     let _ = stream.set_nodelay(true);
     let peer_addr = stream.peer_addr().ok();
@@ -154,6 +164,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
     let mut reader = BufReader::new(reader_stream);
     let mut connected_device_id: Option<String> = None;
     let mut active_file_transfers: HashMap<String, PathBuf> = HashMap::new();
+    let mut session_cwd: PathBuf = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
 
     loop {
         let mut line = String::new();
@@ -571,8 +582,147 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                         )
                     }
 
-                    MessageType::Command | MessageType::Pong | MessageType::Error => {
-                        // Client acknowledgment, pong, or client error report:
+                    MessageType::TerminalExec => {
+                        let payload_res: Result<TerminalExecPayload, _> =
+                            serde_json::from_value(message.payload.clone());
+                        let (raw_cmd, requested_cwd) = match payload_res {
+                            Ok(p) => (p.command, p.cwd),
+                            Err(_) => {
+                                let cmd = message
+                                    .payload
+                                    .get("command")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let c = message
+                                    .payload
+                                    .get("cwd")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string());
+                                (cmd, c)
+                            }
+                        };
+
+                        if let Some(c) = requested_cwd {
+                            let p = PathBuf::from(&c);
+                            if p.is_dir() {
+                                session_cwd = p;
+                            }
+                        }
+
+                        let cmd_trimmed = raw_cmd.trim();
+                        let mut stdout_text = String::new();
+                        let mut stderr_text = String::new();
+                        let mut exit_code = 0;
+
+                        if cmd_trimmed.is_empty() {
+                            // Welcome banner / connection info
+                            #[cfg(target_os = "windows")]
+                            {
+                                stdout_text = format!(
+                                    "Microsoft Windows PowerShell Remote Shell\r\nConnected to: {}\r\nReady for input.",
+                                    whoami_info()
+                                );
+                            }
+                            #[cfg(not(target_os = "windows"))]
+                            {
+                                stdout_text = format!(
+                                    "Linux / POSIX Remote Shell\nConnected to: {}\nReady for input.",
+                                    whoami_info()
+                                );
+                            }
+                        } else if cmd_trimmed == "clear" || cmd_trimmed == "cls" {
+                            stdout_text = "[CLEAR]".to_string();
+                        } else if cmd_trimmed.starts_with("cd ") || cmd_trimmed == "cd" {
+                            let target = cmd_trimmed.strip_prefix("cd").unwrap().trim();
+                            if target.is_empty() || target == "~" {
+                                if let Some(h) = dirs::home_dir() {
+                                    session_cwd = h;
+                                }
+                            } else {
+                                let target_path = if target.starts_with('/')
+                                    || (target.len() > 1 && target.chars().nth(1) == Some(':'))
+                                {
+                                    PathBuf::from(target)
+                                } else {
+                                    session_cwd.join(target)
+                                };
+
+                                match std::fs::canonicalize(&target_path) {
+                                    Ok(canonical) => {
+                                        session_cwd = canonical;
+                                    }
+                                    Err(err) => {
+                                        stderr_text = format!("cd: {}: {}", target, err);
+                                        exit_code = 1;
+                                    }
+                                }
+                            }
+                        } else {
+                            // Shell execution (Windows: PowerShell/cmd, Linux: sh/bash)
+                            #[cfg(target_os = "windows")]
+                            let out_res = std::process::Command::new("powershell.exe")
+                                .args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_trimmed])
+                                .current_dir(&session_cwd)
+                                .output()
+                                .or_else(|_| {
+                                    std::process::Command::new("cmd.exe")
+                                        .args(&["/C", cmd_trimmed])
+                                        .current_dir(&session_cwd)
+                                        .output()
+                                });
+
+                            #[cfg(not(target_os = "windows"))]
+                            let out_res = std::process::Command::new("sh")
+                                .args(&["-c", cmd_trimmed])
+                                .current_dir(&session_cwd)
+                                .output();
+
+                            match out_res {
+                                Ok(out) => {
+                                    stdout_text = String::from_utf8_lossy(&out.stdout).to_string();
+                                    stderr_text = String::from_utf8_lossy(&out.stderr).to_string();
+                                    exit_code = out.status.code().unwrap_or(0);
+                                }
+                                Err(e) => {
+                                    stderr_text = format!("Execution failed: {e}");
+                                    exit_code = 127;
+                                }
+                            }
+                        }
+
+                        // Safeguard buffer size to prevent socket saturation
+                        const MAX_OUTPUT_BYTES: usize = 65536;
+                        if stdout_text.len() > MAX_OUTPUT_BYTES {
+                            stdout_text.truncate(MAX_OUTPUT_BYTES);
+                            stdout_text.push_str("\n... [Output truncated at 64 KB] ...");
+                        }
+                        if stderr_text.len() > MAX_OUTPUT_BYTES {
+                            stderr_text.truncate(MAX_OUTPUT_BYTES);
+                            stderr_text.push_str("\n... [Error output truncated at 64 KB] ...");
+                        }
+
+                        let out_payload = json!({
+                            "command": cmd_trimmed,
+                            "stdout": stdout_text,
+                            "stderr": stderr_text,
+                            "exit_code": exit_code,
+                            "cwd": session_cwd.to_string_lossy().to_string()
+                        });
+
+                        if let Some(ref handle) = app_handle {
+                            let _ = handle.emit("terminal-command-executed", &out_payload);
+                        }
+
+                        Message::new(
+                            MessageType::TerminalOutput,
+                            request_id,
+                            out_payload,
+                        )
+                    }
+
+                    MessageType::Command | MessageType::Pong | MessageType::Error | MessageType::TerminalOutput => {
+                        // Client acknowledgment, pong, client error report, or output report:
                         // Do not reply with another message to avoid infinite loop.
                         continue;
                     }

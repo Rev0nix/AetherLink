@@ -28,6 +28,7 @@ import {
   PairedDevice,
   NetworkInfo,
 } from "../services/tauri";
+import { LinuxFirewallHelper } from "../components/LinuxFirewallHelper";
 
 export default function Devices() {
   const navigate = useNavigate();
@@ -218,33 +219,9 @@ export default function Devices() {
           </div>
         </div>
 
-        {/* Linux Firewall Card */}
-        <div className="rounded-3xl bg-[#171D2B]/80 border border-[#20283A] p-5 space-y-3 flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-[#FFB84D] text-xs font-bold">
-              <span className="flex items-center gap-1.5">
-                <Terminal size={15} />
-                Ubuntu Firewall (UFW)
-              </span>
-              <span className="text-[10px] font-mono bg-[#FFB84D]/15 px-2 py-0.5 rounded text-[#FFB84D]">
-                PORT 45876
-              </span>
-            </div>
-            <p className="text-[11px] text-[#929BB0] leading-relaxed">
-              If pairing fails or times out from a smartphone on Wi-Fi, run this command:
-            </p>
-            <div className="p-2.5 rounded-xl bg-[#090B14] font-mono text-[10px] text-zinc-300 border border-[#20283A] select-all overflow-x-auto">
-              {ufwCommand}
-            </div>
-          </div>
-
-          <button
-            onClick={copyUfw}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[#20283A] hover:bg-[#FFB84D]/20 text-[#FFB84D] text-xs font-semibold transition cursor-pointer"
-          >
-            {copiedUfw ? <Check size={14} className="text-[#35D49A]" /> : <Copy size={14} />}
-            <span>{copiedUfw ? "Copied Command!" : "Copy UFW Command"}</span>
-          </button>
+        {/* Linux Firewall Card (All Distros) */}
+        <div className="flex flex-col justify-between">
+          <LinuxFirewallHelper />
         </div>
       </div>
 

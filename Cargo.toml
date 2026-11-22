@@ -19,7 +19,7 @@ members = [
 
 [workspace.package]
 edition = "2024"
-license = "MIT"
+license = "PolyForm-Noncommercial-1.0.0"
 authors = ["Revanth H M"]
 repository = "https://github.com/Rev0nix/AetherLink"
 

@@ -25,9 +25,15 @@ elif [ -f "$DIR/desktop" ]; then
     chmod +x "$DIR/desktop"
     exec "$DIR/desktop" "$@"
 # Priority 2: Built binary in workspace target/ directory
+elif [ -f "$DIR/target/release/vexyron" ]; then
+    chmod +x "$DIR/target/release/vexyron"
+    exec "$DIR/target/release/vexyron" "$@"
 elif [ -f "$DIR/target/release/desktop" ]; then
     chmod +x "$DIR/target/release/desktop"
     exec "$DIR/target/release/desktop" "$@"
+elif [ -f "$DIR/target/debug/vexyron" ]; then
+    chmod +x "$DIR/target/debug/vexyron"
+    exec "$DIR/target/debug/vexyron" "$@"
 elif [ -f "$DIR/target/debug/desktop" ]; then
     chmod +x "$DIR/target/debug/desktop"
     exec "$DIR/target/debug/desktop" "$@"

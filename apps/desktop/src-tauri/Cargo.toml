@@ -1,9 +1,10 @@
 [package]
-name = "desktop"
-version = "2.3.1"
-description = "A Tauri App"
-authors = ["you"]
+name = "vexyron"
+version = "2.3.2"
+description = "VEXYRON Desktop Application"
+authors = ["Revanth H M"]
 edition = "2021"
+license = "PolyForm-Noncommercial-1.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,7 +12,7 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "desktop_lib"
+name = "vexyron_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

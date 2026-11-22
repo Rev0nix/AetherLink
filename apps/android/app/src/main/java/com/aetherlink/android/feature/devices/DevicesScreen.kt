@@ -159,7 +159,8 @@ fun DevicesScreen(
                     device = device,
                     isConnected = isConnected,
                     onConnect = { vm.connectToDevice(device) },
-                    onDisconnect = { vm.disconnect() }
+                    onDisconnect = { vm.disconnect() },
+                    onOpenTerminal = { navController.navigate(Screen.Terminal.route) }
                 )
             }
         }
@@ -241,7 +242,8 @@ fun DeviceItemCard(
     device: Device,
     isConnected: Boolean,
     onConnect: () -> Unit,
-    onDisconnect: () -> Unit
+    onDisconnect: () -> Unit,
+    onOpenTerminal: () -> Unit = {}
 ) {
     AetherCard(
         borderColor = if (isConnected) AetherGreen.copy(alpha = 0.4f) else AetherBorder
@@ -311,6 +313,11 @@ fun DeviceItemCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (isConnected) {
+                    AetherPrimaryButton(
+                        text = "Terminal",
+                        onClick = onOpenTerminal,
+                        modifier = Modifier.weight(1f)
+                    )
                     AetherSecondaryButton(
                         text = "Disconnect",
                         onClick = onDisconnect,

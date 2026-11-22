@@ -17,5 +17,7 @@ enum class MessageType {
     CLIPBOARD,
     NOTIFICATION,
     COMMAND,
+    TERMINAL_EXEC,
+    TERMINAL_OUTPUT,
     ERROR
 }

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
@@ -503,6 +504,31 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         navController.navigate(Screen.Clipboard.route)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickActionCard(
+                        title = "Remote Terminal",
+                        icon = Icons.Default.Terminal,
+                        accentColor = AetherCyan,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        navController.navigate(Screen.Terminal.route)
+                    }
+
+                    QuickActionCard(
+                        title = "Notifications",
+                        icon = Icons.Default.Notifications,
+                        accentColor = AetherPurple,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        navController.navigate(Screen.Notifications.route)
                     }
                 }
             }

@@ -33,6 +33,7 @@ import {
 } from "../services/tauri";
 import { useTranslation, SUPPORTED_LANGUAGES, LanguageCode } from "../i18n";
 import { useThemeStore, THEME_OPTIONS, ThemeMode } from "../store/themeStore";
+import { LinuxFirewallHelper } from "../components/LinuxFirewallHelper";
 import { useUpdateStore } from "../services/updateService";
 
 type SettingsTab = "general" | "network" | "automation" | "about";
@@ -350,32 +351,8 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Firewall helper */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-amber-500/25 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#FFB84D] flex items-center gap-1.5">
-                  <Terminal size={14} />
-                  {t("network.firewall_title")}
-                </span>
-                <button
-                  onClick={copyUfw}
-                  className="flex items-center gap-1 text-[11px] bg-[var(--bg-surface)] hover:bg-amber-500/20 text-[#FFB84D] px-2.5 py-1 rounded-lg font-mono transition cursor-pointer"
-                >
-                  {copiedUfw ? (
-                    <Check size={13} className="text-[#35D49A]" />
-                  ) : (
-                    <Copy size={13} />
-                  )}
-                  <span>{copiedUfw ? t("network.copied") : t("network.copy")}</span>
-                </button>
-              </div>
-              <p className="text-[11px] text-[var(--text-secondary)]">
-                {t("network.firewall_desc")}
-              </p>
-              <div className="p-2.5 rounded-xl bg-black/40 font-mono text-[10px] text-zinc-300 border border-[var(--border-color)] select-all">
-                sudo ufw allow 45876/tcp && sudo ufw allow 5353/udp
-              </div>
-            </div>
+            {/* Linux Firewall Helper (All Distros) */}
+            <LinuxFirewallHelper />
           </div>
         </div>
       )}

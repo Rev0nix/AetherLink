@@ -177,7 +177,7 @@ class HomeViewModel(
                     if (target == null) {
                         Log.d("AetherLink", "No desktop found on LAN")
                         state = DeviceState.DISCONNECTED
-                        errorMessage = "No desktop found. Tap 'Direct IP' or allow port in Ubuntu: sudo ufw allow 45876/tcp"
+                        errorMessage = "No desktop found. Tap 'Direct IP' or check Linux firewall helper in Settings."
                         return@launch
                     }
                 }

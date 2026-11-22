@@ -21,6 +21,7 @@ import {
   type NetworkInfo,
 } from "../services/tauri";
 import { useAppStore } from "../store/appStore";
+import { LinuxFirewallHelper } from "./LinuxFirewallHelper";
 
 export default function PairingModal() {
   const { isQrModalOpen, closeQrModal } = useAppStore();
@@ -263,36 +264,9 @@ export default function PairingModal() {
             </div>
           </div>
 
-          {/* Ubuntu Firewall Troubleshooter */}
-          <div className="mt-5 p-3.5 rounded-2xl bg-[#171D2B]/80 border border-amber-500/20 text-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-semibold text-[#FFB84D] text-[11px]">
-                <Terminal size={14} />
-                Ubuntu Firewall (UFW) Notice
-              </div>
-              <button
-                onClick={copyUfw}
-                className="flex items-center gap-1 text-[10px] font-mono bg-[#20283A] hover:bg-amber-500/20 text-[#FFB84D] px-2 py-1 rounded-lg transition cursor-pointer"
-              >
-                {copiedCmd ? (
-                  <>
-                    <Check size={12} className="text-[#35D49A]" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} />
-                    <span>Copy Command</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <p className="text-[11px] text-[#929BB0] leading-snug">
-              If pairing times out on physical phone, allow port 45876 in Ubuntu terminal:
-            </p>
-            <div className="p-2 rounded-lg bg-[#090B14] font-mono text-[10px] text-zinc-300 border border-[#20283A] select-all overflow-x-auto">
-              sudo ufw allow 45876/tcp && sudo ufw allow 5353/udp
-            </div>
+          {/* Linux Firewall Helper (All Distros) */}
+          <div className="mt-4">
+            <LinuxFirewallHelper />
           </div>
         </div>
       </div>

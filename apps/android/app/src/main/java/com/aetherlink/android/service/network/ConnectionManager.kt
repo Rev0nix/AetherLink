@@ -500,6 +500,27 @@ object ConnectionManager {
                 Log.d("ConnectionManager", "Heartbeat PONG confirmed from Laptop")
             }
 
+            MessageType.TERMINAL_OUTPUT -> {
+                try {
+                    val payloadObj = message.payload as? JsonObject
+                    val cmd = (payloadObj?.get("command") as? JsonPrimitive)?.content ?: ""
+                    val stdout = (payloadObj?.get("stdout") as? JsonPrimitive)?.content ?: ""
+                    val stderr = (payloadObj?.get("stderr") as? JsonPrimitive)?.content ?: ""
+                    val exitCode = (payloadObj?.get("exit_code") as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
+                    val cwd = (payloadObj?.get("cwd") as? JsonPrimitive)?.content ?: ""
+
+                    com.aetherlink.android.service.terminal.TerminalManager.onTerminalOutput(
+                        command = cmd,
+                        stdout = stdout,
+                        stderr = stderr,
+                        exitCode = exitCode,
+                        newCwd = cwd
+                    )
+                } catch (e: Exception) {
+                    Log.e("ConnectionManager", "Error handling TERMINAL_OUTPUT", e)
+                }
+            }
+
             else -> {
                 Log.d("ConnectionManager", "Unhandled message type: ${message.type}")
             }

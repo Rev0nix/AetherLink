@@ -11,6 +11,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -247,8 +250,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Default.Terminal,
                         iconTint = AetherOrange,
-                        title = "Ubuntu Firewall (UFW) Helper",
-                        subtitle = "View and copy required Linux firewall rules",
+                        title = "Linux Firewall Helper (All Distros)",
+                        subtitle = "UFW, Firewalld, iptables, openSUSE & nftables",
                         onClick = { showUfwDialog = true }
                     )
                 }
@@ -380,8 +383,8 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Default.Info,
                         iconTint = AetherTextMuted,
-                        title = "Open Source License",
-                        subtitle = "MIT License (Tap to view)",
+                        title = "Software License",
+                        subtitle = "PolyForm Noncommercial License 1.0.0",
                         onClick = { showLicenseDialog = true }
                     )
                     SettingsRow(
@@ -567,16 +570,55 @@ fun SettingsScreen(
         )
     }
 
-    // 4. Ubuntu Firewall (UFW) Helper Dialog
+    // 4. Linux Firewall Helper Dialog (All Distros)
     if (showUfwDialog) {
-        val ufwCmd = "sudo ufw allow ${AppConstants.DISCOVERY_PORT}/tcp && sudo ufw allow 5353/udp"
+        val firewallRules = remember {
+            listOf(
+                Triple("UFW", "Ubuntu / Debian / Mint", "sudo ufw allow ${AppConstants.DISCOVERY_PORT}/tcp && sudo ufw allow 5353/udp"),
+                Triple("Firewalld", "Fedora / RHEL / CentOS", "sudo firewall-cmd --add-port=${AppConstants.DISCOVERY_PORT}/tcp --add-port=5353/udp --permanent && sudo firewall-cmd --reload"),
+                Triple("iptables", "Arch Linux / Manjaro / Generic", "sudo iptables -I INPUT -p tcp --dport ${AppConstants.DISCOVERY_PORT} -j ACCEPT && sudo iptables -I INPUT -p udp --dport 5353 -j ACCEPT"),
+                Triple("openSUSE", "openSUSE Leap & Tumbleweed", "sudo firewall-cmd --zone=public --add-port=${AppConstants.DISCOVERY_PORT}/tcp --add-port=5353/udp --permanent && sudo firewall-cmd --reload"),
+                Triple("nftables", "Debian 12+ / Alpine / NixOS", "sudo nft add rule inet filter input tcp dport ${AppConstants.DISCOVERY_PORT} accept && sudo nft add rule inet filter input udp dport 5353 accept")
+            )
+        }
+        var selectedDistroIndex by remember { mutableIntStateOf(0) }
+        val activeRule = firewallRules[selectedDistroIndex]
+
         AlertDialog(
             onDismissRequest = { showUfwDialog = false },
             containerColor = AetherCardBg,
-            title = { Text("Ubuntu Linux Firewall Rule", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text("Linux Firewall Helper", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Ubuntu blocks incoming connections by default. Execute this command in your desktop terminal:", color = AetherTextSecondary, fontSize = 12.sp)
+                    Text("Select your Linux distribution to copy the required firewall port rule:", color = AetherTextSecondary, fontSize = 12.sp)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        firewallRules.forEachIndexed { index, rule ->
+                            val isSelected = index == selectedDistroIndex
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) AetherCyan else AetherSurfaceElevated)
+                                    .clickable { selectedDistroIndex = index }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = rule.first,
+                                    color = if (isSelected) Color.Black else AetherTextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    Text("Target: ${activeRule.second}", color = AetherTextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -585,7 +627,7 @@ fun SettingsScreen(
                             .border(1.dp, AetherBorder, RoundedCornerShape(10.dp))
                             .padding(12.dp)
                     ) {
-                        Text(ufwCmd, color = AetherCyan, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(activeRule.third, color = AetherCyan, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             },
@@ -594,8 +636,8 @@ fun SettingsScreen(
                     text = "Copy Command",
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("UFW Command", ufwCmd))
-                        Toast.makeText(context, "Command copied to clipboard!", Toast.LENGTH_SHORT).show()
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Firewall Command", activeRule.third))
+                        Toast.makeText(context, "${activeRule.first} command copied to clipboard!", Toast.LENGTH_SHORT).show()
                         showUfwDialog = false
                     }
                 )
@@ -652,16 +694,16 @@ fun SettingsScreen(
         )
     }
 
-    // 7. MIT License Dialog
+    // 7. PolyForm Noncommercial License Dialog
     if (showLicenseDialog) {
         AlertDialog(
             onDismissRequest = { showLicenseDialog = false },
             containerColor = AetherCardBg,
-            title = { Text("MIT License", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text("PolyForm Noncommercial 1.0.0", color = AetherTextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column {
                     Text(
-                        "Copyright (c) 2026 Revanth H M\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files...",
+                        "PolyForm Noncommercial License 1.0.0\nhttps://polyformproject.org/licenses/noncommercial/1.0.0\n\nCopyright (c) 2026 Revanth H M\n\nThis license allows each user to run, copy, distribute, make available, and make derivative works of this software for noncommercial purposes.\n\nPersonal uses including research, experiment, testing, private study, hobby projects, and education are permitted purposes.",
                         color = AetherTextSecondary,
                         fontSize = 11.sp,
                         lineHeight = 15.sp

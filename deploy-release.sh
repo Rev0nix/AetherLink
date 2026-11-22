@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.1}"
+VERSION="${1:-v2.3.2}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
 
-rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb ./VEXYRON-Linux.AppImage ./VEXYRON-Linux-x86_64.tar.gz
+rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb ./VEXYRON-Linux.AppImage ./VEXYRON-Linux-x86_64.tar.gz ./VEXYRON-Windows-Portable.zip
 
 if [ ! -f "VEXYRON-Android.apk" ]; then
     echo "--> Building Android APK..."
@@ -20,41 +20,24 @@ fi
 
 if [ ! -f "VEXYRON-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
-    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.0/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
+    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
 fi
 
-echo "--> Packaging Linux Debian (.deb) and AppImage packages..."
+echo "--> Packaging Linux Debian (.deb) package..."
 (cd apps/desktop && npm run build)
-(cd apps/desktop && npx tauri build --bundles deb,appimage --ignore-version-mismatches || npx tauri build --bundles deb --ignore-version-mismatches || true)
+(cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
 DEB_FILE=$(ls -t target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
 if [ -n "$DEB_FILE" ]; then
     echo "--> Copying newest Debian package: $DEB_FILE"
     cp "$DEB_FILE" ./VEXYRON-Linux.deb
 fi
 
-APPIMAGE_FILE=$(ls -t target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1)
-if [ -n "$APPIMAGE_FILE" ]; then
-    echo "--> Copying newest AppImage package: $APPIMAGE_FILE"
-    cp "$APPIMAGE_FILE" ./VEXYRON-Linux.AppImage
-fi
-
-echo "--> Packaging Linux Standalone tarball..."
-rm -rf /tmp/vexyron-desktop
-mkdir -p /tmp/vexyron-desktop
-cp target/release/desktop /tmp/vexyron-desktop/vexyron
-cp launch-desktop.sh /tmp/vexyron-desktop/
-cp install-desktop.sh /tmp/vexyron-desktop/
-cp vexyron.desktop /tmp/vexyron-desktop/
-cp aetherlink-app-icon.png /tmp/vexyron-desktop/icon.png
-chmod +x /tmp/vexyron-desktop/vexyron /tmp/vexyron-desktop/launch-desktop.sh /tmp/vexyron-desktop/install-desktop.sh
-tar -czvf VEXYRON-Linux-x86_64.tar.gz -C /tmp vexyron-desktop
-
-# 3. Push Git Tag to Trigger GitHub Actions Release
+# Push Git Tag to Trigger GitHub Actions Release
 echo "--> Pushing Git tag $VERSION..."
 git tag -f "$VERSION"
 git push -f origin "$VERSION"
 
-# 4. Direct Upload to GitHub Releases
+# Direct Upload to GitHub Releases
 export VERSION
 python3 - << 'EOF'
 import urllib.request, json, os
@@ -71,51 +54,60 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.1")
+tag = os.environ.get("VERSION", "v2.3.2")
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
 
-Universal device synchronization across Android, Windows, and Linux laptops & desktops.
+Universal cross-device synchronization and remote control ecosystem connecting Android phones with Windows and Linux laptops.
+
+Licensed under the **PolyForm Noncommercial License 1.0.0**.
 
 ---
 
-### 📥 Release Downloads
+### 📥 3 Official Application Downloads
 
-| Platform | Package File | Notes |
+| Platform | Package File | Description |
 |:---|:---|:---|
-| 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ companion app |
-| 🪟 **Windows (Installer)** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard user installer (no administrator rights needed) |
-| 🐧 **Linux (Universal AppImage)** | [**VEXYRON-Linux.AppImage**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.AppImage) | Universal 1-click executable for all Linux laptops |
-| 🐧 **Linux (Debian / Ubuntu)** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Ubuntu / Debian 64-bit package |
-| 🐧 **Linux (Standalone Tarball)** | [**VEXYRON-Linux-x86_64.tar.gz**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux-x86_64.tar.gz) | Standalone bundle with 1-click install script |
+| 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ mobile application with Remote Terminal |
+| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (no admin elevation required) |
+| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade from aether-link) |
 
 ---
 
-### 💻 Laptop Installation Guide
+### 💻 Laptop Installation & Setup
 
 #### 🪟 Windows Laptops:
-1. Run `VEXYRON-Windows-Setup.exe`.
-2. The installer runs in **currentUser** mode and installs into `%LocalAppData%\\Programs\\VEXYRON` without needing any administrator privileges or triggering UAC blocks.
-3. If Windows Defender SmartScreen displays a warning, click **More info** -> **Run anyway**.
+1. Download and run `VEXYRON-Windows-Setup.exe`.
+2. Installs per-user into `%LocalAppData%\\Programs\\VEXYRON` without requiring Administrator privileges or prompting UAC blocks.
+3. If Windows SmartScreen appears, click **More info** -> **Run anyway**.
 
-#### 🐧 Linux Laptops:
-* **Recommended (AppImage)**: Download `VEXYRON-Linux.AppImage`, make it executable (`chmod +x VEXYRON-Linux.AppImage`), and run it directly. It works across Ubuntu 24.04/22.04, Fedora, Arch, Linux Mint, and openSUSE without needing root or package managers.
-* **Debian / Ubuntu (.deb)**:
-  In Ubuntu 24.04 (where App Center does not support local .deb GUI double-click), open a terminal in your Downloads folder and run:
-  ```bash
-  sudo apt install ./VEXYRON-Linux.deb
-  ```
-* **Standalone Tarball**:
-  Extract `VEXYRON-Linux-x86_64.tar.gz` and run `./install-desktop.sh` to install the desktop shortcut into your application menu.
+#### 🐧 Linux Laptops (Ubuntu / Debian):
+Install via terminal or your package manager:
+```bash
+sudo apt install ./VEXYRON-Linux.deb
+```
+*(Resolves previous `trying to overwrite '/usr/bin/desktop'` conflicts when upgrading from `aether-link 2.2.8`)*
 
 ---
 
-### 🔧 Fixes in {tag}
-- **Resolved Windows Laptop Installation Failure**: Changed NSIS installer mode to `currentUser`, eliminating Administrator privilege / UAC elevation errors (Error 740) and Windows Smart App Control blocks.
-- **Universal Linux Laptop Support via AppImage**: Provided standalone `VEXYRON-Linux.AppImage` with bundled WebKitGTK and GTK runtimes, enabling seamless execution on Ubuntu 24.04, Fedora, Arch, and all modern distributions.
-- **Enhanced Standalone Linux Bundle**: Packaged `VEXYRON-Linux-x86_64.tar.gz` with user-level installation script (`install-desktop.sh`) and automatic WebKitGTK DMA-BUF compatibility.
-- **Resolved Debian Package Metadata & Categories**: Added `Utility` and `Network` categories and system dependencies for proper application menu integration.
+### 🌟 What's New in {tag}
+
+- 💻 **Android Remote Laptop Terminal**:
+  Connect your phone to your laptop (Windows or Linux) to execute terminal commands in real-time right from your phone. Features live directory navigation (`cd`), auto-scrolling output, quick command chips, history recall, and host status badges.
+- 🛡️ **Universal Linux Firewall Helper**:
+  Settings and Devices screens now include tailored firewall rules for **all Linux distributions**:
+  - **UFW** (Ubuntu, Debian, Linux Mint, Pop!_OS)
+  - **Firewalld** (Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux)
+  - **iptables** (Arch Linux, Manjaro, generic kernels)
+  - **openSUSE** (openSUSE Leap & Tumbleweed)
+  - **nftables** (Debian 12+, Alpine, NixOS)
+- 📜 **PolyForm Noncommercial License 1.0.0**:
+  Added the official PolyForm Noncommercial License to the repository and all client application settings.
+- 🔧 **Resolved Debian Package Upgrade Conflict**:
+  Fixed the installation error `trying to overwrite '/usr/bin/desktop', which is also in package aether-link 2.2.8`. The package now installs `/usr/bin/vexyron` and declares `replaces: ["aether-link", "aetherlink", "desktop"]`, `conflicts: ["aether-link", "aetherlink"]`, and `provides: ["aether-link", "aetherlink"]`.
+- 📦 **Streamlined 3-Application Release**:
+  Dedicated packages for Android, Windows, and Linux laptops with no extra confusion.
 """
 
 try:
@@ -148,12 +140,22 @@ except urllib.error.HTTPError:
 files = [
     ('VEXYRON-Android.apk', 'application/vnd.android.package-archive'),
     ('VEXYRON-Windows-Setup.exe', 'application/vnd.microsoft.portable-executable'),
-    ('VEXYRON-Linux.AppImage', 'application/x-iso9660-appimage'),
-    ('VEXYRON-Linux.deb', 'application/vnd.debian.binary-package'),
-    ('VEXYRON-Linux-x86_64.tar.gz', 'application/gzip')
+    ('VEXYRON-Linux.deb', 'application/vnd.debian.binary-package')
 ]
 
 existing_assets = {a['name']: a['id'] for a in rel.get('assets', [])}
+allowed_names = {name for name, _ in files}
+
+# Clean up any non-3-app assets from earlier releases
+for a in rel.get('assets', []):
+    if a['name'] not in allowed_names:
+        del_url = f"https://api.github.com/repos/Rev0nix/AetherLink/releases/assets/{a['id']}"
+        del_req = urllib.request.Request(del_url, headers=headers, method='DELETE')
+        try:
+            urllib.request.urlopen(del_req)
+            print(f"Removed extra asset: {a['name']}")
+        except Exception:
+            pass
 
 for name, mime in files:
     if not os.path.exists(name): continue
