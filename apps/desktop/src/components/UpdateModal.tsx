@@ -37,11 +37,11 @@ export default function UpdateModal() {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
     let matched;
     if (ua.includes("win")) {
-      matched = updateInfo.assets.find((a) => a.name.includes("Windows") || a.name.endsWith(".exe"));
+      matched = updateInfo.assets.find((a) => a.name.endsWith(".exe") || a.name.includes("Windows"));
     } else if (ua.includes("linux")) {
-      matched = updateInfo.assets.find((a) => a.name.includes("Linux") || a.name.endsWith(".deb"));
+      matched = updateInfo.assets.find((a) => a.name.endsWith(".AppImage") || a.name.endsWith(".deb") || a.name.includes("Linux"));
     } else if (ua.includes("android")) {
-      matched = updateInfo.assets.find((a) => a.name.includes("Android") || a.name.endsWith(".apk"));
+      matched = updateInfo.assets.find((a) => a.name.endsWith(".apk") || a.name.includes("Android"));
     }
     return matched?.downloadUrl || updateInfo.assets[0]?.downloadUrl || updateInfo.releaseUrl;
   };

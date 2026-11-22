@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.0}"
+VERSION="${1:-v2.3.1}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
 
-rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb
+rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb ./VEXYRON-Linux.AppImage ./VEXYRON-Linux-x86_64.tar.gz
 
 if [ ! -f "VEXYRON-Android.apk" ]; then
     echo "--> Building Android APK..."
@@ -20,17 +20,34 @@ fi
 
 if [ ! -f "VEXYRON-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
-    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.2.9/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
+    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.0/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
 fi
 
-echo "--> Packaging Linux Debian (.deb) package..."
+echo "--> Packaging Linux Debian (.deb) and AppImage packages..."
 (cd apps/desktop && npm run build)
-(cd apps/desktop && npx tauri build --bundles deb --ignore-version-mismatches || true)
+(cd apps/desktop && npx tauri build --bundles deb,appimage --ignore-version-mismatches || npx tauri build --bundles deb --ignore-version-mismatches || true)
 DEB_FILE=$(ls -t target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
 if [ -n "$DEB_FILE" ]; then
     echo "--> Copying newest Debian package: $DEB_FILE"
     cp "$DEB_FILE" ./VEXYRON-Linux.deb
 fi
+
+APPIMAGE_FILE=$(ls -t target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1)
+if [ -n "$APPIMAGE_FILE" ]; then
+    echo "--> Copying newest AppImage package: $APPIMAGE_FILE"
+    cp "$APPIMAGE_FILE" ./VEXYRON-Linux.AppImage
+fi
+
+echo "--> Packaging Linux Standalone tarball..."
+rm -rf /tmp/vexyron-desktop
+mkdir -p /tmp/vexyron-desktop
+cp target/release/desktop /tmp/vexyron-desktop/vexyron
+cp launch-desktop.sh /tmp/vexyron-desktop/
+cp install-desktop.sh /tmp/vexyron-desktop/
+cp vexyron.desktop /tmp/vexyron-desktop/
+cp aetherlink-app-icon.png /tmp/vexyron-desktop/icon.png
+chmod +x /tmp/vexyron-desktop/vexyron /tmp/vexyron-desktop/launch-desktop.sh /tmp/vexyron-desktop/install-desktop.sh
+tar -czvf VEXYRON-Linux-x86_64.tar.gz -C /tmp vexyron-desktop
 
 # 3. Push Git Tag to Trigger GitHub Actions Release
 echo "--> Pushing Git tag $VERSION..."
@@ -58,7 +75,7 @@ url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
 
-Universal device synchronization across Android, Windows, and Linux.
+Universal device synchronization across Android, Windows, and Linux laptops & desktops.
 
 ---
 
@@ -67,8 +84,10 @@ Universal device synchronization across Android, Windows, and Linux.
 | Platform | Package File | Notes |
 |:---|:---|:---|
 | 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ companion app |
-| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Windows 10/11 64-bit installer |
-| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Ubuntu / Debian 64-bit package |
+| 🪟 **Windows (Installer)** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard user installer (no administrator rights needed) |
+| 🐧 **Linux (Universal AppImage)** | [**VEXYRON-Linux.AppImage**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.AppImage) | Universal 1-click executable for all Linux laptops |
+| 🐧 **Linux (Debian / Ubuntu)** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Ubuntu / Debian 64-bit package |
+| 🐧 **Linux (Standalone Tarball)** | [**VEXYRON-Linux-x86_64.tar.gz**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux-x86_64.tar.gz) | Standalone bundle with 1-click install script |
 
 ---
 
@@ -76,26 +95,26 @@ Universal device synchronization across Android, Windows, and Linux.
 
 #### 🪟 Windows Laptops:
 1. Run `VEXYRON-Windows-Setup.exe`.
-2. If Windows Defender SmartScreen displays a warning, click **More info** &rarr; **Run anyway**.
-3. (If blocked by Windows 11 Smart App Control: Right-click `.exe` &rarr; Properties &rarr; check **Unblock** &rarr; Apply).
+2. The installer runs in **currentUser** mode and installs into `%LocalAppData%\\Programs\\VEXYRON` without needing any administrator privileges or triggering UAC blocks.
+3. If Windows Defender SmartScreen displays a warning, click **More info** &rarr; **Run anyway**.
 
-#### 🐧 Linux Laptops (Ubuntu / Debian):
-* In Ubuntu 24.04 (App Center does not support local .deb GUI double-click), open a terminal in your Downloads folder and run:
+#### 🐧 Linux Laptops:
+* **Recommended (AppImage)**: Download `VEXYRON-Linux.AppImage`, make it executable (`chmod +x VEXYRON-Linux.AppImage`), and run it directly. It works across Ubuntu 24.04/22.04, Fedora, Arch, Linux Mint, and openSUSE without needing root or package managers.
+* **Debian / Ubuntu (.deb)**:
+  In Ubuntu 24.04 (where App Center does not support local .deb GUI double-click), open a terminal in your Downloads folder and run:
   ```bash
   sudo apt install ./VEXYRON-Linux.deb
   ```
+* **Standalone Tarball**:
+  Extract `VEXYRON-Linux-x86_64.tar.gz` and run `./install-desktop.sh` to install the desktop shortcut into your application menu.
 
 ---
 
-### ✨ Highlights in {tag}
-- **Rebranding to VEXYRON**: Official ecosystem transition from AetherLink to VEXYRON across Android, Windows, and Linux.
-- **Brand New App Image & Visual Identity**: Stunning 3D cybernetic "V" emblem with glowing electric cyan and magenta accents.
-- **Unified Cross-Platform Suite**: Updated desktop and Android companion apps with modern icons, branding, and launchers.
-- **Direct In-App Updates**: Update and install directly from within the app with real-time download progress and 1-tap package installation.
-- **On-Device Voice Input (Mic)**: High-speed speech recognition using native SpeechRecognizer with live partial streaming.
-- **Responsive Keyboard Insets**: Floating input bars automatically adapt above soft keyboards across all screen sizes.
-- **Theme Personalization**: 4 distinct color systems (Midnight Dark, Clean Studio Light, AMOLED Pitch Black, Cyberpunk Neon).
-- **Multilingual Support**: Instant localization across 8 languages (English, Spanish, French, German, Chinese, Japanese, Hindi, Portuguese).
+### 🔧 Fixes in {tag}
+- **Resolved Windows Laptop Installation Failure**: Changed NSIS installer mode to `currentUser`, eliminating Administrator privilege / UAC elevation errors (Error 740) and Windows Smart App Control blocks.
+- **Universal Linux Laptop Support via AppImage**: Provided standalone `VEXYRON-Linux.AppImage` with bundled WebKitGTK and GTK runtimes, enabling seamless execution on Ubuntu 24.04, Fedora, Arch, and all modern distributions.
+- **Enhanced Standalone Linux Bundle**: Packaged `VEXYRON-Linux-x86_64.tar.gz` with user-level installation script (`install-desktop.sh`) and automatic WebKitGTK DMA-BUF compatibility.
+- **Resolved Debian Package Metadata & Categories**: Added `Utility` and `Network` categories and system dependencies for proper application menu integration.
 """
 
 try:
@@ -128,7 +147,9 @@ except urllib.error.HTTPError:
 files = [
     ('VEXYRON-Android.apk', 'application/vnd.android.package-archive'),
     ('VEXYRON-Windows-Setup.exe', 'application/vnd.microsoft.portable-executable'),
-    ('VEXYRON-Linux.deb', 'application/vnd.debian.binary-package')
+    ('VEXYRON-Linux.AppImage', 'application/x-iso9660-appimage'),
+    ('VEXYRON-Linux.deb', 'application/vnd.debian.binary-package'),
+    ('VEXYRON-Linux-x86_64.tar.gz', 'application/gzip')
 ]
 
 existing_assets = {a['name']: a['id'] for a in rel.get('assets', [])}
