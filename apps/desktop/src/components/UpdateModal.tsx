@@ -30,7 +30,7 @@ export default function UpdateModal() {
 
   const handleDismiss = () => {
     if (latestVersion) {
-      sessionStorage.setItem("aetherlink_dismissed_update", latestVersion);
+      sessionStorage.setItem("vexyron_dismissed_update", latestVersion);
     }
     closeModal();
   };

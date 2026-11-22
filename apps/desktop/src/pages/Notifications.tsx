@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { NotificationItem } from "../services/tauri";
 
-const STORAGE_KEY = "aetherlink_notifications_history";
+const STORAGE_KEY = "vexyron_notifications_history";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {

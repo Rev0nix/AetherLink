@@ -35,15 +35,15 @@ export default function MainLayout() {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text);
-          console.log("[AetherLink] Auto-synced phone text to OS clipboard:", text.slice(0, 30));
+          console.log("[VEXYRON] Auto-synced phone text to OS clipboard:", text.slice(0, 30));
         }
       } catch (err) {
-        console.warn("[AetherLink] navigator.clipboard write failed:", err);
+        console.warn("[VEXYRON] navigator.clipboard write failed:", err);
       }
 
       // 2. Persist in clipboard history
       try {
-        const stored = localStorage.getItem("aetherlink_clipboard_history");
+        const stored = localStorage.getItem("vexyron_clipboard_history");
         const list = stored ? JSON.parse(stored) : [];
         const updated = [
           {
@@ -55,7 +55,7 @@ export default function MainLayout() {
           },
           ...list.filter((item: any) => item.content !== text),
         ];
-        localStorage.setItem("aetherlink_clipboard_history", JSON.stringify(updated.slice(0, 50)));
+        localStorage.setItem("vexyron_clipboard_history", JSON.stringify(updated.slice(0, 50)));
       } catch (_e) {}
     });
 

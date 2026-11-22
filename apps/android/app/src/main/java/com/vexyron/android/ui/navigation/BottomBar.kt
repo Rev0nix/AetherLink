@@ -1,0 +1,150 @@
+package com.vexyron.android.ui.navigation
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.vexyron.android.core.designsystem.VexyronBgSecondary
+import com.vexyron.android.core.designsystem.VexyronBorder
+import com.vexyron.android.core.designsystem.VexyronCyan
+import com.vexyron.android.core.designsystem.VexyronPurple
+import com.vexyron.android.core.designsystem.VexyronTextMuted
+
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.ui.platform.LocalDensity
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun VexyronBottomBar(navController: NavController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // Hide bottom bar when soft keyboard is visible
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    if (WindowInsets.isImeVisible || imeBottom > 0) return
+
+    // Only display on main 5 tabs
+    val isTabRoute = Screen.bottomBarTabs.any { it.route == currentRoute }
+    if (!isTabRoute) return
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(68.dp)
+                .clip(RoundedCornerShape(26.dp))
+                .background(VexyronBgSecondary.copy(alpha = 0.95f))
+                .border(1.dp, VexyronBorder, RoundedCornerShape(26.dp))
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Screen.bottomBarTabs.forEach { tab ->
+                val selected = currentRoute == tab.route
+
+                val iconTint by animateColorAsState(
+                    targetValue = if (selected) VexyronCyan else VexyronTextMuted,
+                    label = "iconTint"
+                )
+
+                val pillBg by animateColorAsState(
+                    targetValue = if (selected) VexyronPurple.copy(alpha = 0.2f) else Color.Transparent,
+                    label = "pillBg"
+                )
+
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(pillBg)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            if (currentRoute != tab.route) {
+                                if (tab == Screen.Home) {
+                                    if (!navController.popBackStack(Screen.Home.route, inclusive = false)) {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Home.route) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                } else {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(Screen.Home.route) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            }
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    if (tab.icon != null) {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.title,
+                            tint = iconTint,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Text(
+                        text = tab.title,
+                        color = iconTint,
+                        fontSize = 11.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                    )
+
+                    if (selected) {
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(VexyronCyan)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

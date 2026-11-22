@@ -80,7 +80,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
       if (!resp.ok) {
         resp = await fetch(
-          "https://api.github.com/repos/Rev0nix/AetherLink/releases/latest",
+          "https://api.github.com/repos/Rev0nix/VEXYRON/releases/latest",
           {
             headers: {
               Accept: "application/vnd.github.v3+json",
@@ -125,14 +125,14 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       });
 
       // If an update is available and it wasn't dismissed in this session
-      const dismissed = sessionStorage.getItem("aetherlink_dismissed_update");
+      const dismissed = sessionStorage.getItem("vexyron_dismissed_update");
       if (updateAvailable && (manual || dismissed !== latestVersion)) {
         set({ isModalOpen: true });
       }
 
       return updateAvailable;
     } catch (err) {
-      console.warn("[AetherLink Update Checker]", err);
+      console.warn("[VEXYRON Update Checker]", err);
       set({
         isChecking: false,
         statusMessage: "Check failed",

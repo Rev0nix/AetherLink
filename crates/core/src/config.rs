@@ -7,7 +7,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            app_name: "AetherLink".into(),
+            app_name: "VEXYRON".into(),
             app_version: env!("CARGO_PKG_VERSION").into(),
         }
     }

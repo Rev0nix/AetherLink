@@ -19,9 +19,9 @@ fn get_local_lan_ip() -> String {
 pub fn start_advertisement(port: u16) -> Result<ServiceDaemon, Box<dyn std::error::Error>> {
     let mdns = ServiceDaemon::new()?;
 
-    let service_type = "_aetherlink._tcp.local.";
+    let service_type = "_vexyron._tcp.local.";
     let instance_name = "VEXYRON Desktop";
-    let host_name = "aetherlink-desktop.local.";
+    let host_name = "vexyron-desktop.local.";
     let properties = [("version", "1.0.0"), ("platform", "desktop")];
     let host_ip = get_local_lan_ip();
 

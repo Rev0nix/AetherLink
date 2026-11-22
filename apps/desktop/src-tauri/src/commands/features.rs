@@ -120,7 +120,7 @@ pub fn get_network_info() -> serde_json::Value {
 
     json!({
         "port": 45876,
-        "mdns_service": "_aetherlink._tcp.local.",
+        "mdns_service": "_vexyron._tcp.local.",
         "local_ip": get_local_lan_ip(),
         "connected_count": connected_count,
     })

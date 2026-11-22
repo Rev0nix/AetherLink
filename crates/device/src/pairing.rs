@@ -85,7 +85,7 @@ impl PairingManager {
         let base_dir = dirs::config_dir()
             .or_else(dirs::home_dir)
             .unwrap_or_else(|| PathBuf::from("."));
-        let config_dir = base_dir.join("aetherlink");
+        let config_dir = base_dir.join("vexyron");
         let _ = fs::create_dir_all(&config_dir);
         config_dir.join("paired_devices.json")
     }

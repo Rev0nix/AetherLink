@@ -16,7 +16,6 @@ fi
 
 if [ -n "$ICON_SRC" ]; then
     cp "$ICON_SRC" "$HOME/.local/share/icons/hicolor/512x512/apps/vexyron.png"
-    cp "$ICON_SRC" "$HOME/.local/share/icons/hicolor/512x512/apps/aetherlink.png"
 fi
 
 cat > "$HOME/.local/share/applications/vexyron.desktop" <<EOF
@@ -32,14 +31,10 @@ Terminal=false
 Categories=Network;FileTransfer;Utility;
 StartupNotify=true
 StartupWMClass=vexyron
-Keywords=sync;clipboard;vexyron;aetherlink;phone;file;transfer;
+Keywords=sync;clipboard;vexyron;phone;file;transfer;
 EOF
 
-# Maintain legacy desktop shortcut link for smooth transition
-cp "$HOME/.local/share/applications/vexyron.desktop" "$HOME/.local/share/applications/aetherlink.desktop"
-
 chmod +x "$HOME/.local/share/applications/vexyron.desktop"
-chmod +x "$HOME/.local/share/applications/aetherlink.desktop"
 
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true

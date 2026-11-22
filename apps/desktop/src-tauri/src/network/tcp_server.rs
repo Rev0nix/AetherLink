@@ -682,7 +682,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
 
                                 let final_name = if clean_name.is_empty() {
                                     let id_prefix = if file_req.file_id.len() >= 8 { &file_req.file_id[..8] } else { &file_req.file_id };
-                                    format!("aether_file_{}", id_prefix)
+                                    format!("vexyron_file_{}", id_prefix)
                                 } else {
                                     clean_name
                                 };

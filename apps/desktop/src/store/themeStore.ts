@@ -52,7 +52,7 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set) => {
-  const initialTheme = (localStorage.getItem("aetherlink_theme") as ThemeMode) || "dark";
+  const initialTheme = (localStorage.getItem("vexyron_theme") as ThemeMode) || "dark";
   
   // Apply to document element on initialization
   if (typeof document !== "undefined") {
@@ -69,7 +69,7 @@ export const useThemeStore = create<ThemeState>((set) => {
   return {
     theme: initialTheme,
     setTheme: (theme: ThemeMode) => {
-      localStorage.setItem("aetherlink_theme", theme);
+      localStorage.setItem("vexyron_theme", theme);
       if (typeof document !== "undefined") {
         document.documentElement.setAttribute("data-theme", theme);
         if (theme === "light") {

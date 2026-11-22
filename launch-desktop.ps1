@@ -9,7 +9,6 @@ Get-NetTCPConnection -LocalPort 45876 -ErrorAction SilentlyContinue | ForEach-Ob
 }
 Stop-Process -Name "VEXYRON" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "vexyron" -Force -ErrorAction SilentlyContinue
-Stop-Process -Name "AetherLink" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "desktop" -Force -ErrorAction SilentlyContinue
 
 # Priority 1: Standalone executable in same directory (extracted release package)
@@ -19,10 +18,6 @@ if (Test-Path "$ScriptDir\VEXYRON.exe") {
 }
 if (Test-Path "$ScriptDir\vexyron.exe") {
     Start-Process "$ScriptDir\vexyron.exe" -ArgumentList $args
-    exit 0
-}
-if (Test-Path "$ScriptDir\AetherLink.exe") {
-    Start-Process "$ScriptDir\AetherLink.exe" -ArgumentList $args
     exit 0
 }
 if (Test-Path "$ScriptDir\desktop.exe") {

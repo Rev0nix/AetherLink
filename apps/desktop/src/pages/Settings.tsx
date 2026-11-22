@@ -343,7 +343,7 @@ export default function Settings() {
                   {t("network.mdns")}
                 </span>
                 <div className="text-xs font-mono text-[#7C5CFC] font-semibold">
-                  {networkInfo?.mdns_service || "_aetherlink._tcp.local."}
+                  {networkInfo?.mdns_service || "_vexyron._tcp.local."}
                 </div>
                 <p className="text-[11px] text-[var(--text-secondary)]">
                   {t("network.mdns_desc")}

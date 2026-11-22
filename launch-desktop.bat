@@ -11,7 +11,6 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":45876"') do (
 )
 taskkill /F /IM VEXYRON.exe >nul 2>&1
 taskkill /F /IM vexyron.exe >nul 2>&1
-taskkill /F /IM AetherLink.exe >nul 2>&1
 taskkill /F /IM desktop.exe >nul 2>&1
 
 :: Priority 1: Standalone executable in same directory (extracted release package)
@@ -21,10 +20,6 @@ if exist "%DIR%VEXYRON.exe" (
 )
 if exist "%DIR%vexyron.exe" (
     start "" "%DIR%vexyron.exe" %*
-    exit /b 0
-)
-if exist "%DIR%AetherLink.exe" (
-    start "" "%DIR%AetherLink.exe" %*
     exit /b 0
 )
 if exist "%DIR%desktop.exe" (

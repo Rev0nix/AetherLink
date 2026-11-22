@@ -13,7 +13,7 @@ if [ ! -f "VEXYRON-Android.apk" ]; then
     (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease)
     if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
         ~/Android/Sdk/build-tools/35.0.0/apksigner sign \
-            --ks apps/android/app/aetherlink-release.jks \
+            --ks apps/android/app/vexyron-release.jks \
             --ks-pass pass:android \
             --ks-key-alias androiddebugkey \
             --key-pass pass:android \
@@ -30,8 +30,7 @@ fi
 
 if [ ! -f "VEXYRON-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
-    curl -sL "https://github.com/Rev0nix/VEXYRON/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || \
-    curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
+    curl -sL "https://github.com/Rev0nix/VEXYRON/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
 fi
 
 echo "--> Packaging Linux Debian (.deb) package..."
@@ -67,15 +66,7 @@ headers = {
 
 tag = os.environ.get("VERSION", "v2.3.7")
 
-# Check if Rev0nix/VEXYRON exists on GitHub; otherwise fall back to Rev0nix/AetherLink
 repo = "Rev0nix/VEXYRON"
-try:
-    test_req = urllib.request.Request(f'https://api.github.com/repos/{repo}', headers=headers)
-    with urllib.request.urlopen(test_req) as r:
-        pass
-except Exception:
-    repo = "Rev0nix/AetherLink"
-
 print(f"--> Target repository: {repo}")
 
 url = f'https://api.github.com/repos/{repo}/releases/tags/{tag}'
@@ -102,7 +93,7 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 
 > **Important for Existing Installations:**  
 > If Android displays *"App not installed as package appears to be invalid"*, this is caused by Android's signature verification blocking an update over an older development build or previous version signed with a different key.  
-> **To resolve:** Simply **uninstall the existing AetherLink / VEXYRON app** from your phone, then install the new `VEXYRON-Android.apk`. All updates share the permanent release signing certificate.
+> **To resolve:** Simply **uninstall the existing VEXYRON app** from your phone, then install the new `VEXYRON-Android.apk`. All updates share the permanent release signing certificate.
 
 ---
 

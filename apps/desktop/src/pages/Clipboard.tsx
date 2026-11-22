@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { sendClipboard, ClipboardItem } from "../services/tauri";
 
-const STORAGE_KEY = "aetherlink_clipboard_history";
+const STORAGE_KEY = "vexyron_clipboard_history";
 
 export default function Clipboard() {
   const [inputText, setInputText] = useState("");

@@ -5,11 +5,11 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 android {
-    namespace = "com.aetherlink.android"
+    namespace = "com.vexyron.android"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.aetherlink.android"
+        applicationId = "com.vexyron.android"
         minSdk = 26
         targetSdk = 35
         versionCode = 20
@@ -20,7 +20,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("aetherlink-release.jks")
+            storeFile = file("vexyron-release.jks")
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"

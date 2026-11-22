@@ -71,7 +71,7 @@ The platform is engineered as a clean monorepo uniting two native clients around
 
 ### 🔍 1. Zero-Config Discovery & Cryptographic Handshake Pairing
 * **Automatic Subnet Discovery:**
-  * **Android:** `NsdDiscoveryManage.kt` and `DiscoveryService.kt` broadcast and resolve `_aetherlink._tcp` services via Android's Network Service Discovery API.
+  * **Android:** `NsdDiscoveryManage.kt` and `DiscoveryService.kt` broadcast and resolve `_vexyron._tcp` services via Android's Network Service Discovery API.
   * **Desktop:** `apps/desktop/src-tauri/src/network/discovery.rs` advertises the workstation and listens for mobile peers on the local network.
 * **Instant QR Code & Pin Pairing:**
   * **Mobile Scanner:** `QrCodeScannerHelper.kt` and `PairingScreen.kt` parse connection metadata directly from the desktop QR modal (`PairingModal.tsx`).
@@ -103,7 +103,7 @@ The platform is engineered as a clean monorepo uniting two native clients around
 * **Chunked Socket Streaming:** Managed by `ConnectionManager.kt` on Android and `tcp_server.rs` / `crates/device/src/file_service.rs` on Rust for reliable binary transfer.
 
 ### 🔔 6. Real-Time Notification Mirroring
-* **Unified Notification Center:** Android notifications are captured by `NotificationSyncScreen.kt` / `AetherLinkService.kt` and streamed to the desktop `Notifications.tsx` view so you can monitor alerts, messages, and app updates from your workstation.
+* **Unified Notification Center:** Android notifications are captured by `NotificationSyncScreen.kt` / `VexyronService.kt` and streamed to the desktop `Notifications.tsx` view so you can monitor alerts, messages, and app updates from your workstation.
 
 ---
 
@@ -121,8 +121,8 @@ VEXYRON-main/
 │   │   ├── gradle/libs.versions.toml   # Centralized version catalog
 │   │   └── app/src/main/
 │   │       ├── AndroidManifest.xml     # Foreground services, NSD, overlay & intent filters
-│   │       └── java/com/aetherlink/android/
-│   │           ├── AetherLinkApp.kt    # Application entry & DI initialization
+│   │       └── java/com/vexyron/android/
+│   │           ├── VexyronApp.kt       # Application entry & DI initialization
 │   │           ├── MainActivity.kt     # Single-activity Compose host
 │   │           ├── core/
 │   │           │   ├── components/     # Custom UI primitives & buttons
@@ -142,7 +142,7 @@ VEXYRON-main/
 │   │           │   ├── pairing/        # QR & manual PairingScreen
 │   │           │   └── settings/       # SettingsScreen & Linux helpers
 │   │           ├── protocol/           # Wire schemas: DeviceInfo, Message, PairPayloads
-│   │           ├── service/            # AetherLinkService, ClipboardTileService, DiscoveryService
+│   │           ├── service/            # VexyronService, ClipboardTileService, DiscoveryService
 │   │           └── ui/navigation/      # AppNavigation, BottomBar, Screen routes
 │   └── desktop/                        # Cross-Platform Desktop Client (Tauri + React)
 │       ├── package.json                # Frontend dependencies & scripts

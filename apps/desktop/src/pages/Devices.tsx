@@ -127,7 +127,7 @@ export default function Devices() {
 
   const localIp = networkInfo?.local_ip || "192.168.0.118";
   const port = networkInfo?.port || 45876;
-  const qrPayload = `aetherlink://${localIp}:${port}`;
+  const qrPayload = `vexyron://${localIp}:${port}`;
   const ufwCommand = "sudo ufw allow 45876/tcp && sudo ufw allow 5353/udp";
 
   const copyUfw = () => {

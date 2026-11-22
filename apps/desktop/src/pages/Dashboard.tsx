@@ -302,7 +302,7 @@ export default function Dashboard() {
 
   const localIp = networkInfo?.local_ip || "192.168.0.118";
   const port = networkInfo?.port || 45876;
-  const qrPayload = `aetherlink://${localIp}:${port}`;
+  const qrPayload = `vexyron://${localIp}:${port}`;
 
   const copyIp = () => {
     navigator.clipboard.writeText(`${localIp}:${port}`);
@@ -418,7 +418,7 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="mt-3 text-xs text-[#929BB0]">
-            Port <span className="font-mono text-white font-bold">{port}</span> (mDNS: _aetherlink)
+            Port <span className="font-mono text-white font-bold">{port}</span> (mDNS: _vexyron)
           </div>
         </div>
 

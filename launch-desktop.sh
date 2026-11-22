@@ -10,7 +10,6 @@ if command -v fuser >/dev/null 2>&1; then
     fuser -k 45876/tcp 2>/dev/null || true
 fi
 pkill -x vexyron 2>/dev/null || true
-pkill -x aetherlink 2>/dev/null || true
 pkill -x desktop 2>/dev/null || true
 sleep 0.2
 
@@ -18,9 +17,6 @@ sleep 0.2
 if [ -f "$DIR/vexyron" ]; then
     chmod +x "$DIR/vexyron"
     exec "$DIR/vexyron" "$@"
-elif [ -f "$DIR/aetherlink" ]; then
-    chmod +x "$DIR/aetherlink"
-    exec "$DIR/aetherlink" "$@"
 elif [ -f "$DIR/desktop" ]; then
     chmod +x "$DIR/desktop"
     exec "$DIR/desktop" "$@"

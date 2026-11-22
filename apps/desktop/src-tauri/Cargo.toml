@@ -33,7 +33,7 @@ mdns-sd = "0.22.0"
 base64 = "0.22"
 dirs = "6"
 
-aether_core = { path = "../../../crates/core" }
+vexyron_core = { path = "../../../crates/core" }
 device = { path = "../../../crates/device" }
 protocol = { path = "../../../crates/protocol" }
 tauri-plugin-dialog = "2.7.1"

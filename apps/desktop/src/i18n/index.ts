@@ -704,9 +704,9 @@ interface I18nState {
 }
 
 export const useI18nStore = create<I18nState>((set, get) => ({
-  language: (localStorage.getItem("aetherlink_language") as LanguageCode) || "en",
+  language: (localStorage.getItem("vexyron_language") as LanguageCode) || "en",
   setLanguage: (lang: LanguageCode) => {
-    localStorage.setItem("aetherlink_language", lang);
+    localStorage.setItem("vexyron_language", lang);
     set({ language: lang });
   },
   t: (key: string, fallback?: string) => {
