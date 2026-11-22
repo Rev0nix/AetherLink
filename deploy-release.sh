@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.4}"
+VERSION="${1:-v2.3.5}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -12,8 +12,17 @@ if [ ! -f "VEXYRON-Android.apk" ]; then
     echo "--> Building Android APK..."
     (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease)
     if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
-        ~/Android/Sdk/build-tools/35.0.0/apksigner sign --ks apps/android/app/aetherlink-release.jks --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android apps/android/app/build/outputs/apk/release/app-release.apk 2>/dev/null || true
-        cp apps/android/app/build/outputs/apk/release/app-release.apk ./VEXYRON-Android.apk
+        ~/Android/Sdk/build-tools/35.0.0/apksigner sign \
+            --ks apps/android/app/aetherlink-release.jks \
+            --ks-pass pass:android \
+            --ks-key-alias androiddebugkey \
+            --key-pass pass:android \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --min-sdk-version 24 \
+            --out ./VEXYRON-Android.apk \
+            apps/android/app/build/outputs/apk/release/app-release.apk
     elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
         cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./VEXYRON-Android.apk
     fi
@@ -55,7 +64,7 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.4")
+tag = os.environ.get("VERSION", "v2.3.5")
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
@@ -73,6 +82,14 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 | 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ mobile application with Remote Terminal |
 | 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (in-app updates & auto-overwrite) |
 | 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade & in-app updates) |
+
+---
+
+### 📱 Android Installation Note
+
+> **Important for Existing Installations:**  
+> If Android displays *"App not installed as package appears to be invalid"*, this is caused by Android's signature verification blocking an update over an older development build or previous version signed with a different key.  
+> **To resolve:** Simply **uninstall the existing AetherLink / VEXYRON app** from your phone, then install the new `VEXYRON-Android.apk`. All updates from v2.3.5 onwards share the permanent release signing certificate.
 
 ---
 
