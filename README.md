@@ -1,7 +1,5 @@
 <div align="center">
-
-<img src="vexyron-app-icon.png" width="128" height="128" alt="VEXYRON Logo" />
-
+ 
 # ⚡ VEXYRON
 
 **High-Performance, Local-First Cross-Device Continuity Ecosystem for Android & Desktop**
@@ -35,19 +33,28 @@ The platform is engineered as a clean monorepo uniting two native clients around
 ## 📸 Screenshots & Interface
 
 ### 💻 Desktop Client (Windows & Linux)
-| Dashboard & Device Discovery | Settings & System Platform Helpers |
-| :---: | :---: |
-| <img src="docs/screenshots/desktop-dashboard.png" alt="Desktop Dashboard" width="480"/> | <img src="docs/screenshots/desktop-settings.png" alt="Desktop Settings" width="480"/> |
+
+<p align="left">
+  <img src="docs/screenshots/desktop-dashboard.png" alt="Desktop Dashboard" width="280"/>
+  &ensp;
+  <img src="docs/screenshots/desktop-settings.png" alt="Desktop Settings" width="280"/>
+</p>
 
 ### 📱 Android Mobile Client
-| Home Dashboard | Device Discovery | File Explorer |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/mobile-home.png" alt="Mobile Home Dashboard" width="250"/> | <img src="docs/screenshots/mobile-devices.png" alt="Mobile Devices" width="250"/> | <img src="docs/screenshots/mobile-files.png" alt="Mobile File Explorer" width="250"/> |
 
-| Vex AI Remote App Launcher | Remote Terminal (Sudo Powered) | Settings & Helpers |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/mobile-assistant.png" alt="Vex AI Assistant" width="250"/> | <img src="docs/screenshots/mobile-terminal.png" alt="Remote Terminal" width="250"/> | <img src="docs/screenshots/mobile-settings.png" alt="Mobile Settings" width="250"/> |
-
+<p align="left">
+  <img src="docs/screenshots/mobile-home.png" alt="Mobile Home Dashboard" width="100"/>
+  &ensp;
+  <img src="docs/screenshots/mobile-devices.png" alt="Mobile Devices" width="100"/>
+  &ensp;
+  <img src="docs/screenshots/mobile-files.png" alt="Mobile File Explorer" width="100"/>
+  &ensp;
+  <img src="docs/screenshots/mobile-assistant.png" alt="Vex AI Assistant" width="100"/>
+  &ensp;
+  <img src="docs/screenshots/mobile-terminal.png" alt="Remote Terminal" width="100"/>
+  &ensp;
+  <img src="docs/screenshots/mobile-settings.png" alt="Mobile Settings" width="100"/>
+</p>
 ---
 
 ## 🆕 Recent Updates & Cross-Platform Tooling
