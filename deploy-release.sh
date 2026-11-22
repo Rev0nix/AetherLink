@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.3}"
+VERSION="${1:-v2.3.4}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -10,8 +10,9 @@ rm -f ./VEXYRON-Android.apk ./VEXYRON-Linux.deb ./VEXYRON-Linux.AppImage ./VEXYR
 
 if [ ! -f "VEXYRON-Android.apk" ]; then
     echo "--> Building Android APK..."
-    (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease || ./gradlew assembleDebug)
+    (cd apps/android && chmod +x gradlew && ./gradlew assembleRelease)
     if [ -f "apps/android/app/build/outputs/apk/release/app-release.apk" ]; then
+        ~/Android/Sdk/build-tools/35.0.0/apksigner sign --ks apps/android/app/aetherlink-release.jks --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android apps/android/app/build/outputs/apk/release/app-release.apk 2>/dev/null || true
         cp apps/android/app/build/outputs/apk/release/app-release.apk ./VEXYRON-Android.apk
     elif [ -f "apps/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
         cp apps/android/app/build/outputs/apk/debug/app-debug.apk ./VEXYRON-Android.apk
@@ -54,7 +55,7 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.2")
+tag = os.environ.get("VERSION", "v2.3.4")
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
@@ -70,8 +71,8 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 | Platform | Package File | Description |
 |:---|:---|:---|
 | 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ mobile application with Remote Terminal |
-| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (no admin elevation required) |
-| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade from aether-link) |
+| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (in-app updates & auto-overwrite) |
+| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade & in-app updates) |
 
 ---
 
@@ -80,31 +81,32 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 #### 🪟 Windows Laptops:
 1. Download and run `VEXYRON-Windows-Setup.exe`.
 2. Installs per-user into `%LocalAppData%\\Programs\\VEXYRON` without requiring Administrator privileges or prompting UAC blocks.
-3. If Windows SmartScreen appears, click **More info** -> **Run anyway**.
+3. Subsequent updates can be downloaded and installed directly **in-app** ("Update & Install In-App"). The installer automatically closes existing processes and overwrites old files in-place without creating duplicate applications.
+4. If Windows SmartScreen appears, click **More info** -> **Run anyway**.
 
 #### 🐧 Linux Laptops (Ubuntu / Debian):
 Install via terminal or your package manager:
 ```bash
 sudo apt install ./VEXYRON-Linux.deb
 ```
-*(Resolves previous `trying to overwrite '/usr/bin/desktop'` conflicts when upgrading from `aether-link 2.2.8`)*
+*(Automatically removes legacy `/usr/bin/desktop` and resolves all file collision conflicts)*
 
 ---
 
 ### 🌟 What's New in {tag}
 
-- ⚡ **Fixed Remote Terminal Socket Delivery**:
-  Resolved "Failed to deliver command to desktop socket" by ensuring commands and session initialization are dispatched asynchronously on background I/O threads, eliminating network on main thread exceptions.
+- 🔄 **In-App Updates for Laptops**:
+  Laptops can now update directly inside the application ("Update & Install In-App") without needing to manually hunt for files in the browser or file manager. Real-time downloading and launch indicators guide you through the process.
+- 🧹 **Automatic Overwrite & Legacy App Cleanup**:
+  Installing an update now replaces and overwrites old application files cleanly rather than creating side-by-side installations. Installers and application startup hooks automatically terminate background locked processes (`aether-link`, `aetherlink`, `desktop`, `vexyron`) and delete old residual `AetherLink` installation directories so apps can be uninstalled/updated without file-in-use blocks.
+- ⌨️ **Android Remote Terminal Keyboard Display Fix**:
+  Fixed an issue where tapping the command input prompt caused the Android software keyboard to hide the input box. Added IME padding so the prompt and quick command toolbar automatically elevate above the keyboard.
+- 📦 **Android In-App Update Installation Fix**:
+  Fixed update installation failures on Android 11–15 by moving APK download storage out of isolated internal cache and into accessible application download storage with proper file read flags and package installer URI permissions.
 - 🔍 **Automatic OS Recognition (Linux vs Windows)**:
-  When your phone connects to your laptop, both the phone and laptop automatically recognize whether the host is Linux or Windows. Includes custom badges, host details, tailored prompts (`PS path>` for Windows vs `user@host:path$` for Linux), and dynamic quick command toolbars.
-- 🪟 **Standard Windowed Mode (Non-Fullscreen)**:
-  Completely disabled full-screen takeover on both desktop and Android. Restores standard window decorations and system bar padding (status bar & navigation bar) without clipping or immersive lock.
-- 💻 **Cross-Platform Remote Laptop Terminal**:
-  Connect phone to laptop to execute shell commands with live working directory tracking (`cd`), output buffering, and history recall.
-- 🛡️ **Universal Linux Firewall Helper**:
-  Comprehensive firewall configuration for UFW, Firewalld, iptables, openSUSE, and nftables.
-- 📜 **PolyForm Noncommercial License 1.0.0**:
-  Added the official PolyForm Noncommercial License across the project.
+  Instant recognition of host OS when phone connects to laptop, with customized shell prompts and quick command toolbars.
+- 🪟 **Windowed Non-Fullscreen Mode**:
+  Disabled forced fullscreen takeover on both desktop and mobile.
 - 📦 **Strictly 3 Official Applications**:
   Android (`VEXYRON-Android.apk`), Windows (`VEXYRON-Windows-Setup.exe`), and Linux (`VEXYRON-Linux.deb`).
 """

@@ -12,8 +12,8 @@ android {
         applicationId = "com.aetherlink.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "2.3.3"
+        versionCode = 17
+        versionName = "2.3.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -24,6 +24,8 @@ android {
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

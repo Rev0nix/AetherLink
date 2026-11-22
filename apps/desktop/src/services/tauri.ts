@@ -236,3 +236,7 @@ export async function openUrl(url: string): Promise<void> {
     window.open(url, "_blank");
   }
 }
+
+export async function installDesktopUpdate(url: string): Promise<string> {
+  return await invoke<string>("install_desktop_update", { url });
+}

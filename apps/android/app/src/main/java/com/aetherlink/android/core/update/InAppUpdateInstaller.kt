@@ -2,8 +2,10 @@ package com.aetherlink.android.core.update
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
@@ -67,6 +69,8 @@ object InAppUpdateInstaller {
                 }
             }
 
+            apkFile.setReadable(true, false)
+
             val apkUri: Uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -76,8 +80,18 @@ object InAppUpdateInstaller {
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
             }
+
+            val resInfoList = context.packageManager.queryIntentActivities(installIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            for (resolveInfo in resInfoList) {
+                val packageName = resolveInfo.activityInfo.packageName
+                context.grantUriPermission(packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
             context.startActivity(installIntent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch package installer", e)
@@ -128,8 +142,8 @@ object InAppUpdateInstaller {
 
                 val contentLength = conn.contentLengthLong
 
-                val updateDir = File(context.cacheDir, "updates").apply { mkdirs() }
-                val apkFile = File(updateDir, "1-AetherLink-Android.apk")
+                val updateDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "updates").apply { mkdirs() }
+                val apkFile = File(updateDir, "VEXYRON-Android.apk")
                 if (apkFile.exists()) {
                     apkFile.delete()
                 }

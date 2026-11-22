@@ -20,6 +20,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            commands::features::cleanup_legacy_installations();
             let handle = app.handle().clone();
             let handle_for_clipboard = app.handle().clone();
             std::thread::spawn(move || {
@@ -50,6 +51,7 @@ pub fn run() {
             pick_files_dialog,
             get_app_info,
             open_url,
+            install_desktop_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

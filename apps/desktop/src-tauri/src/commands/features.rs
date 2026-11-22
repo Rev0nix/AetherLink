@@ -630,3 +630,114 @@ pub fn open_url(url: String) -> Result<(), String> {
     }
     Ok(())
 }
+
+pub fn cleanup_legacy_installations() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", "aether-link.exe", "/IM", "aetherlink.exe", "/IM", "desktop.exe", "/T"])
+            .output();
+
+        if let Some(local_appdata) = std::env::var_os("LOCALAPPDATA") {
+            let old_programs = std::path::PathBuf::from(&local_appdata).join("Programs").join("AetherLink");
+            if old_programs.exists() {
+                let _ = std::fs::remove_dir_all(old_programs);
+            }
+            let old_appdata = std::path::PathBuf::from(&local_appdata).join("AetherLink");
+            if old_appdata.exists() {
+                let _ = std::fs::remove_dir_all(old_appdata);
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(home) = dirs::home_dir() {
+            let old_desktop_shortcut = home.join(".local/share/applications/aether-link.desktop");
+            if old_desktop_shortcut.exists() {
+                let _ = std::fs::remove_file(old_desktop_shortcut);
+            }
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn install_desktop_update(url: String) -> Result<String, String> {
+    let temp_dir = std::env::temp_dir();
+
+    #[cfg(target_os = "windows")]
+    let filename = "VEXYRON-Windows-Setup.exe";
+
+    #[cfg(target_os = "linux")]
+    let filename = "VEXYRON-Linux.deb";
+
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    let filename = "VEXYRON-Update.bin";
+
+    let target_path = temp_dir.join(filename);
+
+    let output = std::process::Command::new("curl")
+        .args([
+            "-L",
+            "--fail",
+            "--silent",
+            "--show-error",
+            &url,
+            "-o",
+            &target_path.to_string_lossy(),
+        ])
+        .output()
+        .map_err(|e| format!("Download execution failed: {e}"))?;
+
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Download failed: {err}"));
+    }
+
+    if !target_path.exists() || std::fs::metadata(&target_path).map(|m| m.len()).unwrap_or(0) == 0 {
+        return Err("Downloaded update package is empty or invalid.".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new(&target_path)
+            .spawn()
+            .map_err(|e| format!("Failed to launch installer: {e}"))?;
+
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+            std::process::exit(0);
+        });
+
+        Ok("Installer launched! Application will close to apply update and replace files.".to_string())
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let deb_str = target_path.to_string_lossy().to_string();
+
+        let mut launched = false;
+        if let Ok(_) = std::process::Command::new("xdg-open").arg(&deb_str).spawn() {
+            launched = true;
+        }
+
+        if !launched {
+            if let Ok(_) = std::process::Command::new("gnome-software").arg(&deb_str).spawn() {
+                launched = true;
+            }
+        }
+
+        if !launched {
+            let _ = std::process::Command::new("pkexec")
+                .args(["apt", "install", "-y", "--reinstall", &deb_str])
+                .spawn();
+        }
+
+        Ok("Update package downloaded and opened with system package installer.".to_string())
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    {
+        Ok(format!("Downloaded update to {}", target_path.to_string_lossy()))
+    }
+}

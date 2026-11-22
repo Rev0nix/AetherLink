@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Sparkles,
   Download,
@@ -8,9 +8,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Package,
+  RefreshCw,
 } from "lucide-react";
 import { useUpdateStore } from "../services/updateService";
-import { openUrl } from "../services/tauri";
+import { openUrl, installDesktopUpdate } from "../services/tauri";
 import { useTranslation } from "../i18n";
 
 export default function UpdateModal() {
@@ -22,6 +23,8 @@ export default function UpdateModal() {
     latestVersion,
   } = useUpdateStore();
   const { t } = useTranslation();
+  const [isInstallingInApp, setIsInstallingInApp] = useState(false);
+  const [installStatus, setInstallStatus] = useState<string | null>(null);
 
   if (!isModalOpen || !updateInfo) return null;
 
@@ -39,11 +42,28 @@ export default function UpdateModal() {
     if (ua.includes("win")) {
       matched = updateInfo.assets.find((a) => a.name.endsWith(".exe") || a.name.includes("Windows"));
     } else if (ua.includes("linux")) {
-      matched = updateInfo.assets.find((a) => a.name.endsWith(".AppImage") || a.name.endsWith(".deb") || a.name.includes("Linux"));
+      matched = updateInfo.assets.find((a) => a.name.endsWith(".deb") || a.name.includes("Linux"));
     } else if (ua.includes("android")) {
       matched = updateInfo.assets.find((a) => a.name.endsWith(".apk") || a.name.includes("Android"));
     }
     return matched?.downloadUrl || updateInfo.assets[0]?.downloadUrl || updateInfo.releaseUrl;
+  };
+
+  const handleInAppUpdate = async () => {
+    const targetUrl = getPlatformDownloadUrl();
+    setIsInstallingInApp(true);
+    setInstallStatus("Downloading update directly into application...");
+    try {
+      const res = await installDesktopUpdate(targetUrl);
+      setInstallStatus(res);
+    } catch (err: any) {
+      setInstallStatus(`In-app update error: ${err?.message || err}. Opening in browser...`);
+      setTimeout(() => {
+        openUrl(targetUrl);
+        setIsInstallingInApp(false);
+        closeModal();
+      }, 2500);
+    }
   };
 
   const handleDownload = (url?: string) => {
@@ -151,11 +171,20 @@ export default function UpdateModal() {
           )}
         </div>
 
+        {/* Status / In-App Progress Banner */}
+        {installStatus && (
+          <div className="mx-6 mb-4 p-3 rounded-2xl bg-[#32C5FF]/10 border border-[#32C5FF]/30 flex items-center gap-3 text-xs text-[#32C5FF]">
+            {isInstallingInApp && <RefreshCw size={16} className="animate-spin shrink-0" />}
+            <span className="font-medium">{installStatus}</span>
+          </div>
+        )}
+
         {/* Modal Footer */}
         <div className="p-4 bg-[var(--bg-card)]/50 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             onClick={handleDismiss}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition cursor-pointer"
+            disabled={isInstallingInApp}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition disabled:opacity-50 cursor-pointer"
           >
             {t("update.remind_later")}
           </button>
@@ -163,18 +192,29 @@ export default function UpdateModal() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => handleDownload(updateInfo.releaseUrl)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] text-xs font-medium text-[var(--text-primary)] transition border border-[var(--border-color)] cursor-pointer"
+              disabled={isInstallingInApp}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] text-xs font-medium text-[var(--text-primary)] transition border border-[var(--border-color)] disabled:opacity-50 cursor-pointer"
             >
               <ExternalLink size={14} />
               <span>{t("update.view_release")}</span>
             </button>
 
             <button
-              onClick={() => handleDownload()}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#7C5CFC] to-[#32C5FF] hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-[#7C5CFC]/25 transition cursor-pointer"
+              onClick={handleInAppUpdate}
+              disabled={isInstallingInApp}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#7C5CFC] to-[#32C5FF] hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-[#7C5CFC]/25 transition disabled:opacity-50 cursor-pointer"
             >
-              <Download size={15} />
-              <span>{t("update.download_now")}</span>
+              {isInstallingInApp ? (
+                <>
+                  <RefreshCw size={15} className="animate-spin" />
+                  <span>Installing In-App...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={15} />
+                  <span>Update & Install In-App</span>
+                </>
+              )}
             </button>
           </div>
         </div>
