@@ -47,16 +47,23 @@ object TerminalManager {
     private val _history = MutableStateFlow<List<String>>(emptyList())
     val history: StateFlow<List<String>> = _history.asStateFlow()
 
+    private val _sudoPassword = MutableStateFlow<String?>(null)
+    val sudoPassword: StateFlow<String?> = _sudoPassword.asStateFlow()
+
+    fun setSudoPassword(password: String?) {
+        _sudoPassword.value = password
+    }
+
     fun initSession() {
         if (ConnectionManager.isConnected) {
             // Request host info and current working directory
             CoroutineScope(Dispatchers.IO).launch {
-                ConnectionManager.sendTerminalCommand("", _cwd.value)
+                ConnectionManager.sendTerminalCommand("", _cwd.value, _sudoPassword.value)
             }
         }
     }
 
-    fun executeCommand(rawCommand: String) {
+    fun executeCommand(rawCommand: String, customSudoPass: String? = null) {
         val trimmed = rawCommand.trim()
         if (trimmed.isEmpty()) return
 
@@ -64,6 +71,8 @@ object TerminalManager {
             clear()
             return
         }
+
+        val effectiveSudoPass = customSudoPass ?: _sudoPassword.value
 
         // Add to history
         val currentHistory = _history.value.toMutableList()
@@ -96,7 +105,7 @@ object TerminalManager {
         _isExecuting.value = true
 
         CoroutineScope(Dispatchers.IO).launch {
-            val ok = ConnectionManager.sendTerminalCommand(trimmed, _cwd.value)
+            val ok = ConnectionManager.sendTerminalCommand(trimmed, _cwd.value, effectiveSudoPass)
             if (!ok) {
                 withContext(Dispatchers.Main) {
                     _isExecuting.value = false

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.5}"
+VERSION="${1:-v2.3.6}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -64,7 +64,7 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.5")
+tag = os.environ.get("VERSION", "v2.3.6")
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})

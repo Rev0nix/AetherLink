@@ -741,3 +741,96 @@ pub async fn install_desktop_update(url: String) -> Result<String, String> {
         Ok(format!("Downloaded update to {}", target_path.to_string_lossy()))
     }
 }
+
+#[tauri::command]
+pub async fn execute_terminal_command(
+    command: String,
+    cwd: Option<String>,
+    sudo_password: Option<String>,
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, String> {
+    let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/"));
+    let mut session_cwd = cwd
+        .map(std::path::PathBuf::from)
+        .filter(|p| p.is_dir())
+        .unwrap_or(home);
+
+    let cmd_trimmed = command.trim();
+    let mut stdout_text = String::new();
+    let mut stderr_text = String::new();
+    let mut exit_code = 0;
+
+    if cmd_trimmed.is_empty() {
+        stdout_text = "Ready for input.".to_string();
+    } else if cmd_trimmed == "clear" || cmd_trimmed == "cls" {
+        stdout_text = "[CLEAR]".to_string();
+    } else if cmd_trimmed.starts_with("cd ") || cmd_trimmed == "cd" {
+        let target = cmd_trimmed.strip_prefix("cd").unwrap().trim();
+        if target.is_empty() || target == "~" {
+            if let Some(h) = dirs::home_dir() {
+                session_cwd = h;
+            }
+        } else {
+            let target_path = if target.starts_with('/')
+                || (target.len() > 1 && target.chars().nth(1) == Some(':'))
+            {
+                std::path::PathBuf::from(target)
+            } else {
+                session_cwd.join(target)
+            };
+
+            match std::fs::canonicalize(&target_path) {
+                Ok(canonical) => {
+                    session_cwd = canonical;
+                }
+                Err(err) => {
+                    stderr_text = format!("cd: {}: {}", target, err);
+                    exit_code = 1;
+                }
+            }
+        }
+    } else {
+        let (out, err, code) = crate::network::tcp_server::run_terminal_command(
+            cmd_trimmed,
+            &session_cwd,
+            sudo_password.as_deref(),
+        );
+        stdout_text = out;
+        stderr_text = err;
+        exit_code = code;
+    }
+
+    const MAX_OUTPUT_BYTES: usize = 65536;
+    if stdout_text.len() > MAX_OUTPUT_BYTES {
+        stdout_text.truncate(MAX_OUTPUT_BYTES);
+        stdout_text.push_str("\n... [Output truncated at 64 KB] ...");
+    }
+    if stderr_text.len() > MAX_OUTPUT_BYTES {
+        stderr_text.truncate(MAX_OUTPUT_BYTES);
+        stderr_text.push_str("\n... [Error output truncated at 64 KB] ...");
+    }
+
+    let os_type = if cfg!(target_os = "windows") {
+        "Windows"
+    } else if cfg!(target_os = "macos") {
+        "macOS"
+    } else {
+        "Linux"
+    };
+
+    let out_payload = serde_json::json!({
+        "command": cmd_trimmed,
+        "stdout": stdout_text,
+        "stderr": stderr_text,
+        "exit_code": exit_code,
+        "cwd": session_cwd.to_string_lossy().to_string(),
+        "os": os_type,
+        "platform": os_type,
+        "hostname": crate::network::tcp_server::whoami_info(),
+        "origin": "local"
+    });
+
+    let _ = app.emit("terminal-command-executed", &out_payload);
+
+    Ok(out_payload)
+}

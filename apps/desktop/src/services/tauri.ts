@@ -240,3 +240,27 @@ export async function openUrl(url: string): Promise<void> {
 export async function installDesktopUpdate(url: string): Promise<string> {
   return await invoke<string>("install_desktop_update", { url });
 }
+
+export interface TerminalCommandOutput {
+  command: string;
+  stdout: string;
+  stderr: string;
+  exit_code: number;
+  cwd: string;
+  os: string;
+  platform: string;
+  hostname: string;
+  origin?: "local" | "remote";
+}
+
+export async function executeTerminalCommand(
+  command: string,
+  cwd?: string,
+  sudoPassword?: string
+): Promise<TerminalCommandOutput> {
+  return await invoke<TerminalCommandOutput>("execute_terminal_command", {
+    command,
+    cwd: cwd || null,
+    sudoPassword: sudoPassword || null,
+  });
+}

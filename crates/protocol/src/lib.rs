@@ -56,6 +56,8 @@ pub struct TerminalExecPayload {
     pub command: String,
     #[serde(default)]
     pub cwd: Option<String>,
+    #[serde(default)]
+    pub sudo_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

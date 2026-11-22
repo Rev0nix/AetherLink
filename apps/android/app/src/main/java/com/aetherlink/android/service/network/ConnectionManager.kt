@@ -766,7 +766,7 @@ object ConnectionManager {
         }
     }
 
-    suspend fun sendTerminalCommand(command: String, cwd: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun sendTerminalCommand(command: String, cwd: String, sudoPassword: String? = null): Boolean = withContext(Dispatchers.IO) {
         val c = client ?: return@withContext false
         if (!c.isConnected()) return@withContext false
         try {
@@ -776,6 +776,9 @@ object ConnectionManager {
                 payload = buildJsonObject {
                     put("command", command)
                     put("cwd", cwd)
+                    if (!sudoPassword.isNullOrBlank()) {
+                        put("sudo_password", sudoPassword)
+                    }
                 }
             )
             c.send(message)

@@ -52,6 +52,7 @@ pub fn run() {
             get_app_info,
             open_url,
             install_desktop_update,
+            execute_terminal_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

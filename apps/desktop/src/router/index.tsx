@@ -6,6 +6,7 @@ import Devices from "../pages/Devices";
 import Clipboard from "../pages/Clipboard";
 import Notifications from "../pages/Notifications";
 import Settings from "../pages/Settings";
+import Terminal from "../pages/Terminal";
 
 import MainLayout from "../layouts/MainLayout";
 
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
       {
         path: "files",
         element: <FileExplorer />,
+      },
+      {
+        path: "terminal",
+        element: <Terminal />,
       },
     ],
   },

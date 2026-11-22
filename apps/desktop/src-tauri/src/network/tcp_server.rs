@@ -7,10 +7,12 @@ use protocol::{
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, Instant};
 use tauri::Emitter;
 use uuid::Uuid;
 
@@ -136,7 +138,7 @@ pub fn get_downloads_dir() -> PathBuf {
     }
 }
 
-fn whoami_info() -> String {
+pub fn whoami_info() -> String {
     let user = std::env::var("USER")
         .or_else(|_| std::env::var("USERNAME"))
         .unwrap_or_else(|_| "user".to_string());
@@ -144,6 +146,165 @@ fn whoami_info() -> String {
         .or_else(|_| std::env::var("COMPUTERNAME"))
         .unwrap_or_else(|_| "localhost".to_string());
     format!("{}@{}", user, host)
+}
+
+pub fn run_terminal_command(
+    cmd_trimmed: &str,
+    cwd: &std::path::Path,
+    sudo_pwd: Option<&str>,
+) -> (String, String, i32) {
+    let timeout = Duration::from_secs(30);
+
+    #[cfg(target_os = "windows")]
+    {
+        let child_res = Command::new("powershell.exe")
+            .args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_trimmed])
+            .current_dir(cwd)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .or_else(|_| {
+                Command::new("cmd.exe")
+                    .args(&["/C", cmd_trimmed])
+                    .current_dir(cwd)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+            });
+
+        match child_res {
+            Ok(mut child) => {
+                let start = Instant::now();
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(status)) => {
+                            let mut stdout_buf = Vec::new();
+                            let mut stderr_buf = Vec::new();
+                            if let Some(mut out) = child.stdout.take() {
+                                let _ = out.read_to_end(&mut stdout_buf);
+                            }
+                            if let Some(mut err) = child.stderr.take() {
+                                let _ = err.read_to_end(&mut stderr_buf);
+                            }
+                            let stdout = String::from_utf8_lossy(&stdout_buf).to_string();
+                            let stderr = String::from_utf8_lossy(&stderr_buf).to_string();
+                            return (stdout, stderr, status.code().unwrap_or(0));
+                        }
+                        Ok(None) => {
+                            if start.elapsed() > timeout {
+                                let _ = child.kill();
+                                return (
+                                    String::new(),
+                                    "Command timed out after 30 seconds. Interactive commands are not supported without a TTY.".to_string(),
+                                    124,
+                                );
+                            }
+                            std::thread::sleep(Duration::from_millis(50));
+                        }
+                        Err(e) => {
+                            return (String::new(), format!("Process monitoring error: {e}"), 1);
+                        }
+                    }
+                }
+            }
+            Err(e) => (String::new(), format!("Failed to spawn shell: {e}"), 127),
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let is_sudo = cmd_trimmed.starts_with("sudo ");
+        let mut actual_cmd = cmd_trimmed.to_string();
+        let mut stdin_data: Option<Vec<u8>> = None;
+
+        if is_sudo {
+            if let Some(pass) = sudo_pwd {
+                if !pass.is_empty() {
+                    // Rewrite to sudo -S -k -p "" so it reads cleanly from stdin without prompting on tty
+                    actual_cmd = cmd_trimmed.replacen("sudo ", "sudo -S -k -p \"\" ", 1);
+                    let mut data = pass.as_bytes().to_vec();
+                    data.push(b'\n');
+                    stdin_data = Some(data);
+                }
+            } else {
+                // Check if passwordless sudo is configured
+                let check_status = Command::new("sudo")
+                    .args(&["-n", "true"])
+                    .status();
+                if let Ok(st) = check_status {
+                    if st.success() {
+                        actual_cmd = cmd_trimmed.replacen("sudo ", "sudo -n ", 1);
+                    } else {
+                        return (
+                            String::new(),
+                            "sudo: Password required. Tap the 🔑 Sudo key in your phone Remote Terminal to enter your laptop's sudo password.".to_string(),
+                            1,
+                        );
+                    }
+                } else {
+                    return (
+                        String::new(),
+                        "sudo: Password required. Tap the 🔑 Sudo key in your phone Remote Terminal to enter your laptop's sudo password.".to_string(),
+                        1,
+                    );
+                }
+            }
+        }
+
+        let child_res = Command::new("sh")
+            .args(&["-c", &actual_cmd])
+            .current_dir(cwd)
+            .stdin(if stdin_data.is_some() { Stdio::piped() } else { Stdio::null() })
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+
+        match child_res {
+            Ok(mut child) => {
+                if let Some(data) = stdin_data {
+                    if let Some(mut sin) = child.stdin.take() {
+                        let _ = sin.write_all(&data);
+                        let _ = sin.flush();
+                        drop(sin); // Close stdin so sudo knows input has finished
+                    }
+                }
+
+                let start = Instant::now();
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(status)) => {
+                            let mut stdout_buf = Vec::new();
+                            let mut stderr_buf = Vec::new();
+                            if let Some(mut out) = child.stdout.take() {
+                                let _ = out.read_to_end(&mut stdout_buf);
+                            }
+                            if let Some(mut err) = child.stderr.take() {
+                                let _ = err.read_to_end(&mut stderr_buf);
+                            }
+                            let stdout = String::from_utf8_lossy(&stdout_buf).to_string();
+                            let stderr = String::from_utf8_lossy(&stderr_buf).to_string();
+                            return (stdout, stderr, status.code().unwrap_or(0));
+                        }
+                        Ok(None) => {
+                            if start.elapsed() > timeout {
+                                let _ = child.kill();
+                                return (
+                                    String::new(),
+                                    "Command timed out after 30 seconds. Interactive commands (e.g. top, nano) are not supported without a TTY.".to_string(),
+                                    124,
+                                );
+                            }
+                            std::thread::sleep(Duration::from_millis(50));
+                        }
+                        Err(e) => {
+                            return (String::new(), format!("Process monitoring error: {e}"), 1);
+                        }
+                    }
+                }
+            }
+            Err(e) => (String::new(), format!("Failed to execute process: {e}"), 127),
+        }
+    }
 }
 
 fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
@@ -221,7 +382,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                             request_id,
                             json!({
                                 "name": "VEXYRON Desktop",
-                                "version": "2.3.5",
+                                "version": "2.3.6",
                                 "os": os_type,
                                 "platform": os_type,
                                 "hostname": host_name
@@ -635,8 +796,8 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                     MessageType::TerminalExec => {
                         let payload_res: Result<TerminalExecPayload, _> =
                             serde_json::from_value(message.payload.clone());
-                        let (raw_cmd, requested_cwd) = match payload_res {
-                            Ok(p) => (p.command, p.cwd),
+                        let (raw_cmd, requested_cwd, sudo_pwd) = match payload_res {
+                            Ok(p) => (p.command, p.cwd, p.sudo_password),
                             Err(_) => {
                                 let cmd = message
                                     .payload
@@ -649,7 +810,12 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                                     .get("cwd")
                                     .and_then(|v| v.as_str())
                                     .map(|s| s.to_string());
-                                (cmd, c)
+                                let sp = message
+                                    .payload
+                                    .get("sudo_password")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string());
+                                (cmd, c, sp)
                             }
                         };
 
@@ -709,36 +875,15 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                                 }
                             }
                         } else {
-                            // Shell execution (Windows: PowerShell/cmd, Linux: sh/bash)
-                            #[cfg(target_os = "windows")]
-                            let out_res = std::process::Command::new("powershell.exe")
-                                .args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_trimmed])
-                                .current_dir(&session_cwd)
-                                .output()
-                                .or_else(|_| {
-                                    std::process::Command::new("cmd.exe")
-                                        .args(&["/C", cmd_trimmed])
-                                        .current_dir(&session_cwd)
-                                        .output()
-                                });
-
-                            #[cfg(not(target_os = "windows"))]
-                            let out_res = std::process::Command::new("sh")
-                                .args(&["-c", cmd_trimmed])
-                                .current_dir(&session_cwd)
-                                .output();
-
-                            match out_res {
-                                Ok(out) => {
-                                    stdout_text = String::from_utf8_lossy(&out.stdout).to_string();
-                                    stderr_text = String::from_utf8_lossy(&out.stderr).to_string();
-                                    exit_code = out.status.code().unwrap_or(0);
-                                }
-                                Err(e) => {
-                                    stderr_text = format!("Execution failed: {e}");
-                                    exit_code = 127;
-                                }
-                            }
+                            // Robust shell execution with sudo support and timeout protection
+                            let (out, err, code) = run_terminal_command(
+                                cmd_trimmed,
+                                &session_cwd,
+                                sudo_pwd.as_deref(),
+                            );
+                            stdout_text = out;
+                            stderr_text = err;
+                            exit_code = code;
                         }
 
                         // Safeguard buffer size to prevent socket saturation
@@ -768,7 +913,8 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                             "cwd": session_cwd.to_string_lossy().to_string(),
                             "os": os_type,
                             "platform": os_type,
-                            "hostname": whoami_info()
+                            "hostname": whoami_info(),
+                            "origin": "remote"
                         });
 
                         if let Some(ref handle) = app_handle {
