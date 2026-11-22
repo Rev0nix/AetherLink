@@ -37,7 +37,7 @@ object UpdateManager {
     private const val PREFS_NAME = "vexyron_prefs"
     private const val KEY_DISMISSED_VERSION = "dismissed_update_version"
 
-    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/VEXYRON/releases/download/v2.3.7/VEXYRON-Android.apk"
+    const val FALLBACK_APK_URL = "https://github.com/Rev0nix/VEXYRON/releases/download/v2.3.8/VEXYRON-Android.apk"
     const val FALLBACK_RELEASE_URL = "https://github.com/Rev0nix/VEXYRON/releases/latest"
 
     var isChecking by mutableStateOf(false)

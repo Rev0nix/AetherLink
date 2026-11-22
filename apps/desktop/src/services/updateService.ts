@@ -51,7 +51,7 @@ function isNewerVersion(latest: string, current: string): boolean {
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
-  currentVersion: "2.3.7",
+  currentVersion: "2.3.8",
   latestVersion: null,
   isUpdateAvailable: false,
   isChecking: false,
@@ -66,7 +66,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     set({ isChecking: true, statusMessage: null });
     try {
       const appInfo = await getAppInfo();
-      const currentVersion = appInfo?.version || "2.3.7";
+      const currentVersion = appInfo?.version || "2.3.8";
       set({ currentVersion });
 
       let resp = await fetch(

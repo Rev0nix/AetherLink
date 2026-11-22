@@ -11,7 +11,6 @@ import {
   BatteryCharging,
   Sparkles,
   Download,
-  Terminal,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAppStore } from "../store/appStore";
@@ -64,12 +63,6 @@ export default function Sidebar() {
       icon: FolderSync,
       path: "/files",
       badge: null,
-    },
-    {
-      name: "Terminal",
-      icon: Terminal,
-      path: "/terminal",
-      badge: "live",
     },
     {
       name: t("nav.settings"),

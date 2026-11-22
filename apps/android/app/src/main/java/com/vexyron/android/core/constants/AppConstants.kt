@@ -4,9 +4,9 @@ object AppConstants {
 
     const val APP_NAME = "VEXYRON"
 
-    const val VERSION = "2.3.7"
+    const val VERSION = "2.3.8"
 
-    const val BUILD_NUMBER = 20
+    const val BUILD_NUMBER = 21
 
     const val GITHUB_REPO = "Rev0nix/VEXYRON"
 

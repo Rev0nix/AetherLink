@@ -22,7 +22,6 @@ import {
   Send,
   ExternalLink,
   Radio,
-  Terminal,
   UploadCloud,
 } from "lucide-react";
 import { useAppStore } from "../store/appStore";

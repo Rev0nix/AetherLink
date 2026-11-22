@@ -3,7 +3,6 @@ import {
   Palette,
   Globe,
   Wifi,
-  Terminal,
   Shield,
   Layers,
   FolderDown,

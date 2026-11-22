@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -62,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -84,6 +86,7 @@ import com.vexyron.android.core.designsystem.VexyronTextSecondary
 import com.vexyron.android.core.voice.VoiceManager
 import com.vexyron.android.domain.model.DeviceState
 import com.vexyron.android.service.network.ConnectionManager
+import com.vexyron.android.service.terminal.TerminalManager
 import com.vexyron.android.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,6 +97,13 @@ data class ChatMessage(
     val isUser: Boolean,
     val time: String = "Just now"
 )
+
+sealed class ActionResolution {
+    data class ImmediateReply(val message: String) : ActionResolution()
+    data class LaunchApp(val command: String, val appName: String) : ActionResolution()
+    data class SystemControl(val command: String, val message: String) : ActionResolution()
+    data class ExecuteCommand(val command: String) : ActionResolution()
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -116,13 +126,289 @@ fun AiAssistantScreen(
 
     val messages = remember {
         mutableStateListOf(
-            ChatMessage("1", "Hello! I am Vex AI. I can control your laptop, open applications like Brave, Chrome or VS Code, check system status, and manage workflows.", isUser = false)
+            ChatMessage(
+                "1",
+                "Hey! I am Vex. I can control your laptop, open applications like WhatsApp and Brave, run commands, and check system status. How can I help you?",
+                isUser = false
+            )
         )
     }
 
-    fun buildAppLaunchCommand(rawText: String, isWindows: Boolean): Pair<String, String>? {
-        val lower = rawText.lowercase().trim()
-        val cleaned = lower
+    fun resolveAction(rawText: String, isWindows: Boolean): ActionResolution {
+        val trimmed = rawText.trim()
+        val lower = trimmed.lowercase()
+
+        // 1. GREETINGS & INTRO
+        if (lower in listOf("hi", "hello", "hey", "hey vex", "hello vex", "hi vex", "yo", "sup") ||
+            lower.startsWith("who are you") || lower.startsWith("what are you")
+        ) {
+            return ActionResolution.ImmediateReply(
+                "Hey! I am Vex. I can control your laptop, open apps and shortcuts (like WhatsApp in Brave), execute shell commands, adjust volume, and check device status. What would you like me to do?"
+            )
+        }
+
+        if (lower == "help" || lower == "what can you do" || lower == "commands") {
+            return ActionResolution.ImmediateReply(
+                "🤖 Hey! I am Vex! Here is what I can do:\n" +
+                "• Open apps & shortcuts: 'open whatsapp in brave from brave shortcuts', 'open brave', 'open chrome', 'open vscode', 'open spotify'\n" +
+                "• Open websites: 'open youtube in brave', 'open chatgpt', 'open github'\n" +
+                "• System controls: 'lock laptop', 'sleep', 'mute', 'volume up', 'take screenshot', 'close brave'\n" +
+                "• Diagnostics: 'whoami', 'my ip', 'disk space', 'ram usage', 'uptime'\n" +
+                "• Run any command: 'ls', 'dir', 'ifconfig', 'git status', 'ping google.com'"
+            )
+        }
+
+        // 2. SMARTPHONE BATTERY
+        if (lower in listOf("battery", "phone battery", "check battery", "check my phone battery", "my battery")) {
+            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { filter ->
+                context.registerReceiver(null, filter)
+            }
+            val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 85
+            return ActionResolution.ImmediateReply("🔋 Your smartphone battery is at $level%.")
+        }
+
+        // 3. CONNECTION & SPEED
+        if (lower in listOf("status", "is laptop connected", "is laptop connected?", "connection", "connection status", "check status")) {
+            val osName = if (hostOs != "Unknown") hostOs else "Laptop"
+            val targetName = if (hostName.isNotBlank() && hostName != "Laptop") hostName else osName
+            return if (isConnected) {
+                ActionResolution.ImmediateReply("🟢 Connected to $osName laptop ($targetName) on port 45876. Ready to execute commands and open applications.")
+            } else {
+                ActionResolution.ImmediateReply("🔴 Laptop is currently disconnected. Go to the Home screen and tap 'Connect' to pair via Wi-Fi.")
+            }
+        }
+
+        if (lower in listOf("speed", "wifi speed", "network speed", "latency")) {
+            return ActionResolution.ImmediateReply("⚡ Local Wi-Fi channel operating at ultra-low latency with transfer throughput up to ~25 MB/s.")
+        }
+
+        // 4. CLOSING / KILLING APPS
+        val isCloseIntent = lower.startsWith("close ") || lower.startsWith("kill ") || lower.startsWith("quit ") || lower.startsWith("exit ") || lower.startsWith("stop ")
+        if (isCloseIntent) {
+            val appToClose = lower
+                .removePrefix("close ")
+                .removePrefix("kill ")
+                .removePrefix("quit ")
+                .removePrefix("exit ")
+                .removePrefix("stop ")
+                .replace(" on laptop", "")
+                .replace(" in laptop", "")
+                .trim()
+            val targetProc = when (appToClose) {
+                "brave", "brave browser" -> "brave"
+                "chrome", "google chrome" -> "chrome"
+                "firefox" -> "firefox"
+                "code", "vscode", "vs code" -> "code"
+                "spotify" -> "spotify"
+                "discord" -> "discord"
+                "vlc" -> "vlc"
+                "steam" -> "steam"
+                else -> appToClose
+            }
+            val cmd = if (isWindows) {
+                "Stop-Process -Name \"$targetProc\" -Force -ErrorAction SilentlyContinue; taskkill /IM \"$targetProc.exe\" /F 2>nul"
+            } else {
+                "pkill -f \"$targetProc\""
+            }
+            return ActionResolution.SystemControl(cmd, "🛑 Closed $appToClose on your laptop.")
+        }
+
+        // 5. SYSTEM CONTROLS (VOLUME, POWER, SCREEN, PLAYBACK)
+        if (lower in listOf("volume up", "increase volume", "louder", "sound up")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]175)"
+            } else {
+                "pactl set-sink-volume @DEFAULT_SINK@ +10% 2>/dev/null || amixer -q sset Master 10%+ 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "🔊 Increased volume on your laptop.")
+        }
+
+        if (lower in listOf("volume down", "decrease volume", "quieter", "sound down", "lower volume")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]174)"
+            } else {
+                "pactl set-sink-volume @DEFAULT_SINK@ -10% 2>/dev/null || amixer -q sset Master 10%- 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "🔉 Decreased volume on your laptop.")
+        }
+
+        if (lower in listOf("mute", "unmute", "toggle mute", "volume mute", "sound mute")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"
+            } else {
+                "pactl set-sink-mute @DEFAULT_SINK@ toggle 2>/dev/null || amixer -q sset Master toggle 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "🔇 Toggled audio mute on your laptop.")
+        }
+
+        if (lower in listOf("play", "pause", "play pause", "play/pause", "resume")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]179)"
+            } else {
+                "playerctl play-pause 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "⏯️ Toggled media playback on your laptop.")
+        }
+
+        if (lower in listOf("next track", "next song", "next")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]176)"
+            } else {
+                "playerctl next 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "⏭️ Skipped to next track.")
+        }
+
+        if (lower in listOf("previous track", "previous song", "prev track", "previous")) {
+            val cmd = if (isWindows) {
+                "(New-Object -ComObject WScript.Shell).SendKeys([char]177)"
+            } else {
+                "playerctl previous 2>/dev/null"
+            }
+            return ActionResolution.SystemControl(cmd, "⏮️ Skipped to previous track.")
+        }
+
+        if (lower in listOf("lock", "lock laptop", "lock pc", "lock screen")) {
+            val cmd = if (isWindows) {
+                "rundll32.exe user32.dll,LockWorkStation"
+            } else {
+                "(loginctl lock-session 2>/dev/null) || (xdg-screensaver lock 2>/dev/null) || (gnome-screensaver-command -l 2>/dev/null) || (xflock4 2>/dev/null)"
+            }
+            return ActionResolution.SystemControl(cmd, "🔒 Locked your laptop screen.")
+        }
+
+        if (lower in listOf("sleep", "suspend", "sleep laptop", "put laptop to sleep")) {
+            val cmd = if (isWindows) {
+                "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"
+            } else {
+                "systemctl suspend"
+            }
+            return ActionResolution.SystemControl(cmd, "💤 Putting your laptop to sleep...")
+        }
+
+        if (lower in listOf("restart", "reboot", "restart laptop", "reboot laptop")) {
+            val cmd = if (isWindows) {
+                "shutdown /r /t 10"
+            } else {
+                "reboot || shutdown -r now"
+            }
+            return ActionResolution.SystemControl(cmd, "🔄 Restarting your laptop...")
+        }
+
+        if (lower in listOf("shutdown", "power off", "turn off laptop", "turn off pc")) {
+            val cmd = if (isWindows) {
+                "shutdown /s /t 10"
+            } else {
+                "shutdown -h now || poweroff"
+            }
+            return ActionResolution.SystemControl(cmd, "🔌 Shutting down your laptop...")
+        }
+
+        if (lower in listOf("screenshot", "take screenshot", "capture screen", "take a screenshot")) {
+            val cmd = if (isWindows) {
+                "Start-Process SnippingTool.exe"
+            } else {
+                "(gnome-screenshot 2>/dev/null) || (spectacle 2>/dev/null) || (scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png 2>/dev/null) || (import -window root ~/Pictures/screenshot.png 2>/dev/null)"
+            }
+            return ActionResolution.SystemControl(cmd, "📸 Captured screenshot on your laptop.")
+        }
+
+        // 6. WHATSAPP & BRAVE SHORTCUTS (SPECIALIZED RESOLVER)
+        val hasWhatsApp = lower.contains("whatsapp")
+        val hasBrave = lower.contains("brave")
+        val hasShortcut = lower.contains("shotcut") || lower.contains("shortcut") || lower.contains("short cut") || lower.contains("pwa") || lower.contains("web app")
+
+        if (hasWhatsApp) {
+            val waUrl = "https://web.whatsapp.com"
+            val cmd = if (isWindows) {
+                if (hasBrave || hasShortcut) {
+                    "try { Start-Process brave -ArgumentList '--app=$waUrl' } catch { try { Start-Process brave -ArgumentList '$waUrl' } catch { Start-Process '$waUrl' } }"
+                } else {
+                    "try { Start-Process whatsapp: } catch { try { Start-Process brave -ArgumentList '--app=$waUrl' } catch { try { Start-Process chrome -ArgumentList '$waUrl' } catch { Start-Process '$waUrl' } } }"
+                }
+            } else {
+                if (hasBrave || hasShortcut) {
+                    "(nohup brave-browser --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup brave --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup /snap/bin/brave --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup flatpak run com.brave.Browser --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup brave-browser \"$waUrl\" >/dev/null 2>&1 &) || (nohup brave \"$waUrl\" >/dev/null 2>&1 &) || (xdg-open \"$waUrl\" >/dev/null 2>&1 &)"
+                } else {
+                    "(gtk-launch whatsapp >/dev/null 2>&1 &) || (gtk-launch whatsapp-for-linux >/dev/null 2>&1 &) || (nohup brave-browser --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup google-chrome --app=\"$waUrl\" >/dev/null 2>&1 &) || (nohup brave \"$waUrl\" >/dev/null 2>&1 &) || (xdg-open \"$waUrl\" >/dev/null 2>&1 &)"
+                }
+            }
+            val label = if (hasBrave && hasShortcut) "WhatsApp in Brave (from shortcuts)" else if (hasBrave) "WhatsApp in Brave" else "WhatsApp"
+            return ActionResolution.LaunchApp(cmd, label)
+        }
+
+        if (hasShortcut && (hasBrave || lower == "brave shortcuts" || lower == "open brave shortcuts" || lower == "open brave shotcuts")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process brave -ArgumentList 'brave://apps' } catch { Start-Process brave }"
+            } else {
+                "(nohup brave-browser \"brave://apps\" >/dev/null 2>&1 &) || (nohup brave \"brave://apps\" >/dev/null 2>&1 &) || (nohup /snap/bin/brave \"brave://apps\" >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Brave Shortcuts")
+        }
+
+        // 7. WEBSITES & SERVICES IN SPECIFIC BROWSERS
+        val webSites = listOf(
+            "youtube" to ("https://www.youtube.com" to "YouTube"),
+            "yt" to ("https://www.youtube.com" to "YouTube"),
+            "chatgpt" to ("https://chatgpt.com" to "ChatGPT"),
+            "gpt" to ("https://chatgpt.com" to "ChatGPT"),
+            "openai" to ("https://chatgpt.com" to "ChatGPT"),
+            "gmail" to ("https://mail.google.com" to "Gmail"),
+            "github" to ("https://github.com" to "GitHub"),
+            "google" to ("https://www.google.com" to "Google"),
+            "twitter" to ("https://x.com" to "Twitter / X"),
+            " x " to ("https://x.com" to "Twitter / X"),
+            "reddit" to ("https://reddit.com" to "Reddit"),
+            "instagram" to ("https://instagram.com" to "Instagram"),
+            "netflix" to ("https://netflix.com" to "Netflix"),
+            "discord" to ("https://discord.com/app" to "Discord Web"),
+            "telegram" to ("https://web.telegram.org" to "Telegram Web"),
+            "spotify" to ("https://open.spotify.com" to "Spotify Web"),
+            "linkedin" to ("https://linkedin.com" to "LinkedIn"),
+            "facebook" to ("https://facebook.com" to "Facebook"),
+            "amazon" to ("https://amazon.com" to "Amazon"),
+            "notion" to ("https://notion.so" to "Notion")
+        )
+
+        for ((siteKey, siteData) in webSites) {
+            val (url, siteName) = siteData
+            if (lower.contains(siteKey)) {
+                if (hasBrave) {
+                    val cmd = if (isWindows) {
+                        if (hasShortcut) "try { Start-Process brave -ArgumentList '--app=$url' } catch { Start-Process brave -ArgumentList '$url' }"
+                        else "try { Start-Process brave -ArgumentList '$url' } catch { Start-Process '$url' }"
+                    } else {
+                        if (hasShortcut) "(nohup brave-browser --app=\"$url\" >/dev/null 2>&1 &) || (nohup brave --app=\"$url\" >/dev/null 2>&1 &) || (xdg-open \"$url\" >/dev/null 2>&1 &)"
+                        else "(nohup brave-browser \"$url\" >/dev/null 2>&1 &) || (nohup brave \"$url\" >/dev/null 2>&1 &) || (xdg-open \"$url\" >/dev/null 2>&1 &)"
+                    }
+                    return ActionResolution.LaunchApp(cmd, "$siteName in Brave")
+                } else if (lower.contains("chrome")) {
+                    val cmd = if (isWindows) {
+                        "try { Start-Process chrome -ArgumentList '$url' } catch { Start-Process '$url' }"
+                    } else {
+                        "(nohup google-chrome \"$url\" >/dev/null 2>&1 &) || (nohup chromium \"$url\" >/dev/null 2>&1 &) || (xdg-open \"$url\" >/dev/null 2>&1 &)"
+                    }
+                    return ActionResolution.LaunchApp(cmd, "$siteName in Chrome")
+                } else if (lower.contains("firefox")) {
+                    val cmd = if (isWindows) {
+                        "try { Start-Process firefox -ArgumentList '$url' } catch { Start-Process '$url' }"
+                    } else {
+                        "(nohup firefox \"$url\" >/dev/null 2>&1 &) || (xdg-open \"$url\" >/dev/null 2>&1 &)"
+                    }
+                    return ActionResolution.LaunchApp(cmd, "$siteName in Firefox")
+                } else if (lower.startsWith("open ") || lower.startsWith("launch ") || lower.startsWith("start ")) {
+                    val cmd = if (isWindows) {
+                        "Start-Process '$url'"
+                    } else {
+                        "xdg-open \"$url\" >/dev/null 2>&1 &"
+                    }
+                    return ActionResolution.LaunchApp(cmd, siteName)
+                }
+            }
+        }
+
+        // 8. DESKTOP APPLICATIONS LAUNCH
+        val cleanedApp = lower
             .removePrefix("open ")
             .removePrefix("launch ")
             .removePrefix("start ")
@@ -133,85 +419,164 @@ fun AiAssistantScreen(
             .replace(" on desktop", "")
             .trim()
 
-        if (cleaned.isEmpty()) return null
+        val isLaunchPrefix = lower.startsWith("open ") || lower.startsWith("launch ") || lower.startsWith("start ")
 
-        return if (isWindows) {
-            when (cleaned) {
-                "brave", "brave browser" -> Pair("Start-Process brave -ErrorAction SilentlyContinue || start brave", "Brave")
-                "chrome", "google chrome" -> Pair("start chrome", "Google Chrome")
-                "firefox", "mozilla firefox" -> Pair("start firefox", "Firefox")
-                "code", "vscode", "vs code", "visual studio code" -> Pair("start code", "VS Code")
-                "spotify" -> Pair("start spotify", "Spotify")
-                "calc", "calculator" -> Pair("start calc", "Calculator")
-                "notepad", "text editor" -> Pair("start notepad", "Notepad")
-                "terminal", "cmd", "powershell" -> Pair("start powershell", "PowerShell")
-                "files", "explorer", "file explorer" -> Pair("start explorer", "File Explorer")
-                "settings" -> Pair("start ms-settings:", "Windows Settings")
-                "youtube" -> Pair("start https://www.youtube.com", "YouTube")
-                "google" -> Pair("start https://www.google.com", "Google")
-                "github" -> Pair("start https://www.github.com", "GitHub")
-                else -> {
-                    if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
-                        Pair("start $cleaned", cleaned)
-                    } else {
-                        Pair("start $cleaned", cleaned.replaceFirstChar { it.uppercase() })
-                    }
-                }
+        if (cleanedApp in listOf("brave", "brave browser")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process brave } catch { start brave }"
+            } else {
+                "(nohup brave-browser >/dev/null 2>&1 &) || (nohup brave >/dev/null 2>&1 &) || (nohup /snap/bin/brave >/dev/null 2>&1 &) || (gtk-launch brave-browser >/dev/null 2>&1 &)"
             }
-        } else {
-            // Linux
-            when (cleaned) {
-                "brave", "brave browser" -> Pair(
-                    "(nohup /snap/bin/brave >/dev/null 2>&1 &) || (nohup brave >/dev/null 2>&1 &) || (nohup brave-browser >/dev/null 2>&1 &) || (gtk-launch brave-browser >/dev/null 2>&1 &) || (gtk-launch brave_brave >/dev/null 2>&1 &)",
-                    "Brave Browser"
-                )
-                "chrome", "google chrome" -> Pair(
-                    "(nohup google-chrome-stable >/dev/null 2>&1 &) || (nohup google-chrome >/dev/null 2>&1 &) || (nohup chromium >/dev/null 2>&1 &) || (gtk-launch google-chrome >/dev/null 2>&1 &)",
-                    "Google Chrome"
-                )
-                "firefox", "mozilla firefox" -> Pair(
-                    "(nohup firefox >/dev/null 2>&1 &) || (gtk-launch firefox >/dev/null 2>&1 &)",
-                    "Firefox"
-                )
-                "code", "vscode", "vs code", "visual studio code" -> Pair(
-                    "(nohup code >/dev/null 2>&1 &) || (gtk-launch code >/dev/null 2>&1 &)",
-                    "VS Code"
-                )
-                "spotify" -> Pair(
-                    "(nohup spotify >/dev/null 2>&1 &) || (nohup /snap/bin/spotify >/dev/null 2>&1 &) || (gtk-launch spotify >/dev/null 2>&1 &)",
-                    "Spotify"
-                )
-                "calc", "calculator" -> Pair(
-                    "(nohup gnome-calculator >/dev/null 2>&1 &) || (nohup kcalc >/dev/null 2>&1 &)",
-                    "Calculator"
-                )
-                "terminal", "bash" -> Pair(
-                    "(nohup gnome-terminal >/dev/null 2>&1 &) || (nohup xterm >/dev/null 2>&1 &) || (nohup konsole >/dev/null 2>&1 &)",
-                    "Terminal"
-                )
-                "files", "file manager", "nautilus" -> Pair(
-                    "(xdg-open ~ >/dev/null 2>&1 &) || (nohup nautilus >/dev/null 2>&1 &)",
-                    "File Manager"
-                )
-                "settings" -> Pair(
-                    "(nohup gnome-control-center >/dev/null 2>&1 &)",
-                    "System Settings"
-                )
-                "youtube" -> Pair("xdg-open \"https://www.youtube.com\" >/dev/null 2>&1 &", "YouTube")
-                "google" -> Pair("xdg-open \"https://www.google.com\" >/dev/null 2>&1 &", "Google")
-                "github" -> Pair("xdg-open \"https://www.github.com\" >/dev/null 2>&1 &", "GitHub")
-                else -> {
-                    if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
-                        Pair("xdg-open \"$cleaned\" >/dev/null 2>&1 &", cleaned)
-                    } else {
-                        Pair(
-                            "(gtk-launch $cleaned >/dev/null 2>&1 &) || (nohup $cleaned >/dev/null 2>&1 &) || (xdg-open $cleaned >/dev/null 2>&1 &)",
-                            cleaned.replaceFirstChar { it.uppercase() }
-                        )
-                    }
-                }
-            }
+            return ActionResolution.LaunchApp(cmd, "Brave Browser")
         }
+
+        if (cleanedApp in listOf("chrome", "google chrome")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process chrome } catch { start chrome }"
+            } else {
+                "(nohup google-chrome-stable >/dev/null 2>&1 &) || (nohup google-chrome >/dev/null 2>&1 &) || (nohup chromium >/dev/null 2>&1 &) || (gtk-launch google-chrome >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Google Chrome")
+        }
+
+        if (cleanedApp in listOf("firefox", "mozilla firefox")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process firefox } catch { start firefox }"
+            } else {
+                "(nohup firefox >/dev/null 2>&1 &) || (gtk-launch firefox >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Firefox")
+        }
+
+        if (cleanedApp in listOf("code", "vscode", "vs code", "visual studio code")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process code } catch { start code }"
+            } else {
+                "(nohup code >/dev/null 2>&1 &) || (gtk-launch code >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "VS Code")
+        }
+
+        if (cleanedApp in listOf("spotify")) {
+            val cmd = if (isWindows) {
+                "try { Start-Process spotify } catch { start spotify }"
+            } else {
+                "(nohup spotify >/dev/null 2>&1 &) || (nohup /snap/bin/spotify >/dev/null 2>&1 &) || (gtk-launch spotify >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Spotify")
+        }
+
+        if (cleanedApp in listOf("calc", "calculator")) {
+            val cmd = if (isWindows) {
+                "start calc"
+            } else {
+                "(nohup gnome-calculator >/dev/null 2>&1 &) || (nohup kcalc >/dev/null 2>&1 &) || (nohup galculator >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Calculator")
+        }
+
+        if (cleanedApp in listOf("notepad", "text editor", "editor")) {
+            val cmd = if (isWindows) {
+                "start notepad"
+            } else {
+                "(nohup gedit >/dev/null 2>&1 &) || (nohup kate >/dev/null 2>&1 &) || (nohup mousepad >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Text Editor")
+        }
+
+        if (cleanedApp in listOf("files", "file explorer", "explorer", "file manager")) {
+            val cmd = if (isWindows) {
+                "start explorer"
+            } else {
+                "(xdg-open ~ >/dev/null 2>&1 &) || (nohup nautilus >/dev/null 2>&1 &) || (nohup thunar >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "File Explorer")
+        }
+
+        if (cleanedApp in listOf("downloads", "downloads folder")) {
+            val cmd = if (isWindows) {
+                "Start-Process explorer \"\$env:USERPROFILE\\Downloads\""
+            } else {
+                "xdg-open ~/Downloads >/dev/null 2>&1 &"
+            }
+            return ActionResolution.LaunchApp(cmd, "Downloads")
+        }
+
+        if (cleanedApp in listOf("settings", "system settings")) {
+            val cmd = if (isWindows) {
+                "start ms-settings:"
+            } else {
+                "(nohup gnome-control-center >/dev/null 2>&1 &) || (nohup systemsettings >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Settings")
+        }
+
+        if (cleanedApp in listOf("terminal", "powershell", "cmd", "bash", "shell")) {
+            val cmd = if (isWindows) {
+                "start powershell"
+            } else {
+                "(nohup gnome-terminal >/dev/null 2>&1 &) || (nohup xterm >/dev/null 2>&1 &) || (nohup konsole >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Terminal")
+        }
+
+        if (cleanedApp in listOf("task manager", "taskmgr", "system monitor")) {
+            val cmd = if (isWindows) {
+                "start taskmgr"
+            } else {
+                "(nohup gnome-system-monitor >/dev/null 2>&1 &) || (nohup ksysguard >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, "Task Manager")
+        }
+
+        if (cleanedApp.startsWith("http://") || cleanedApp.startsWith("https://")) {
+            val cmd = if (isWindows) "Start-Process '$cleanedApp'" else "xdg-open \"$cleanedApp\" >/dev/null 2>&1 &"
+            return ActionResolution.LaunchApp(cmd, cleanedApp)
+        }
+
+        // 9. SYSTEM DIAGNOSTIC SHORTCUT COMMANDS
+        if (lower in listOf("whoami", "user", "username")) {
+            return ActionResolution.ExecuteCommand("whoami")
+        }
+        if (lower in listOf("ip", "my ip", "ip address", "ipconfig", "ifconfig", "ip a")) {
+            val cmd = if (isWindows) "ipconfig" else "ip -brief address show 2>/dev/null || ifconfig 2>/dev/null || hostname -I"
+            return ActionResolution.ExecuteCommand(cmd)
+        }
+        if (lower in listOf("uptime", "system uptime")) {
+            val cmd = if (isWindows) "(Get-Date) - (gcim Win32_OperatingSystem).LastBootUpTime" else "uptime -p 2>/dev/null || uptime"
+            return ActionResolution.ExecuteCommand(cmd)
+        }
+        if (lower in listOf("ram", "memory", "ram usage", "free ram", "free memory")) {
+            val cmd = if (isWindows) "Get-CimInstance Win32_OperatingSystem | Select-Object @{N=\"FreeRAM_GB\";E={[math]::Round(\$_.FreePhysicalMemory/1MB,2)}}, @{N=\"TotalRAM_GB\";E={[math]::Round(\$_.TotalVisibleMemorySize/1MB,2)}}" else "free -h"
+            return ActionResolution.ExecuteCommand(cmd)
+        }
+        if (lower in listOf("disk", "disk space", "storage", "free disk", "df", "df -h")) {
+            val cmd = if (isWindows) "Get-PSDrive -PSProvider FileSystem | Select-Object Name, @{N=\"Free_GB\";E={[math]::Round(\$_.Free/1GB,2)}}" else "df -h /"
+            return ActionResolution.ExecuteCommand(cmd)
+        }
+
+        // 10. GENERAL / ARBITRARY COMMANDS OR PREFIXED COMMANDS
+        val strippedCmd = trimmed
+            .removePrefix("run ")
+            .removePrefix("exec ")
+            .removePrefix("execute ")
+            .removePrefix("terminal ")
+            .removePrefix("cmd ")
+            .removePrefix("bash ")
+            .removePrefix("powershell ")
+            .trim()
+
+        if (isLaunchPrefix) {
+            val cmd = if (isWindows) {
+                "start $cleanedApp"
+            } else {
+                "(gtk-launch $cleanedApp >/dev/null 2>&1 &) || (nohup $cleanedApp >/dev/null 2>&1 &) || (xdg-open $cleanedApp >/dev/null 2>&1 &)"
+            }
+            return ActionResolution.LaunchApp(cmd, cleanedApp.replaceFirstChar { it.uppercase() })
+        }
+
+        // Direct shell/terminal command
+        return ActionResolution.ExecuteCommand(strippedCmd)
     }
 
     fun handleSend(text: String) {
@@ -224,68 +589,60 @@ fun AiAssistantScreen(
             delay(100)
             listState.animateScrollToItem(messages.size - 1)
 
-            val lower = trimmed.lowercase()
             val isWindows = hostOs.equals("Windows", ignoreCase = true)
             val osName = if (hostOs != "Unknown") hostOs else "Laptop"
             val targetName = if (hostName.isNotBlank() && hostName != "Laptop") hostName else osName
 
-            // Check if user is asking to launch/open an application
-            val isAppLaunchIntent = lower.startsWith("open ") ||
-                    lower.startsWith("launch ") ||
-                    lower.startsWith("start ") ||
-                    lower.startsWith("run ") ||
-                    lower == "brave" || lower == "chrome" || lower == "firefox" ||
-                    lower == "code" || lower == "vscode" || lower == "spotify" ||
-                    lower == "calculator" || lower == "terminal"
+            val action = resolveAction(trimmed, isWindows)
 
-            val reply = if (isAppLaunchIntent) {
-                if (!isConnected) {
-                    "⚠️ Your laptop is currently disconnected. Tap 'Connect' on the Home screen to link via Wi-Fi, then I will open applications for you."
-                } else {
-                    val launchPair = buildAppLaunchCommand(trimmed, isWindows)
-                    if (launchPair != null) {
-                        val (cmd, appName) = launchPair
-                        // Trigger background execution on the laptop
-                        ConnectionManager.sendTerminalCommand(cmd, "~")
-                        "🚀 Opening $appName on your $osName laptop ($targetName)..."
+            val reply = when (action) {
+                is ActionResolution.ImmediateReply -> {
+                    action.message
+                }
+                is ActionResolution.LaunchApp -> {
+                    if (!isConnected) {
+                        "⚠️ Your laptop is currently disconnected. Tap 'Connect' on the Home screen to link via Wi-Fi, then I will open applications for you."
                     } else {
-                        "I couldn't identify the application name. Try saying 'open brave', 'open chrome', or 'open vscode'."
+                        ConnectionManager.sendTerminalCommand(action.command, "~")
+                        "🚀 Opening ${action.appName} on your $osName laptop ($targetName)..."
                     }
                 }
-            } else when {
-                lower.contains("battery") -> {
-                    val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { filter ->
-                        context.registerReceiver(null, filter)
-                    }
-                    val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 85
-                    "🔋 Your smartphone battery is at $level%."
-                }
-                lower.contains("connect") || lower.contains("status") -> {
-                    if (isConnected) {
-                        "🟢 Connected to $osName laptop ($targetName) on port 45876. You can send commands or say 'open brave' to launch applications."
+                is ActionResolution.SystemControl -> {
+                    if (!isConnected) {
+                        "⚠️ Your laptop is currently disconnected. Tap 'Connect' on the Home screen to link via Wi-Fi."
                     } else {
-                        "🔴 Laptop is currently disconnected. Go to the Home screen and tap 'Connect' to pair via Wi-Fi."
+                        ConnectionManager.sendTerminalCommand(action.command, "~")
+                        action.message
                     }
                 }
-                lower.contains("speed") -> {
-                    "⚡ Local Wi-Fi connection channel operating at ultra-low latency with transfer throughput up to ~25 MB/s."
-                }
-                lower.contains("photo") || lower.contains("file") -> {
-                    "📁 You can beam files directly to your laptop's Downloads folder! Head over to the Files tab to send images, docs, and media."
-                }
-                lower.contains("help") -> {
-                    "🤖 I am Vex AI! Here is what I can do:\n• Open apps on laptop: 'open brave', 'open chrome', 'open vscode', 'open calculator'\n• Open websites: 'open youtube', 'open github'\n• Check device status: 'is laptop connected', 'battery level'\n• Remote control: Use the Remote Terminal for full bash & PowerShell commands."
-                }
-                else -> {
-                    if (isConnected) {
-                        "Understood! I'm linked to your $osName laptop. You can ask me to open apps (e.g. 'open brave', 'open chrome') or use the Remote Terminal to run shell commands."
+                is ActionResolution.ExecuteCommand -> {
+                    if (!isConnected) {
+                        "⚠️ Your laptop is currently disconnected. Tap 'Connect' on the Home screen to link via Wi-Fi, then I can run commands on your laptop."
                     } else {
-                        "Hello! I am Vex AI. Connect your phone to your laptop on the Home screen to launch applications, beam files, and sync clipboard seamlessly."
+                        val result = TerminalManager.executeCommandWithOutput(action.command, timeoutMs = 3500)
+                        if (result != null) {
+                            when {
+                                result.stdout.isNotBlank() -> {
+                                    "💻 Output from $targetName:\n${result.stdout.trim()}"
+                                }
+                                result.stderr.isNotBlank() -> {
+                                    "⚠️ Output from $targetName:\n${result.stderr.trim()}"
+                                }
+                                result.exitCode == 0 -> {
+                                    "✅ Executed on your laptop: ${action.command}"
+                                }
+                                else -> {
+                                    "⚠️ Command exited with code ${result.exitCode} on your laptop."
+                                }
+                            }
+                        } else {
+                            "⚡ Dispatched command to your $osName laptop ($targetName): ${action.command}"
+                        }
                     }
                 }
             }
 
-            delay(400)
+            delay(200)
             messages.add(ChatMessage((System.currentTimeMillis() + 1).toString(), reply, isUser = false))
             delay(100)
             listState.animateScrollToItem(messages.size - 1)
@@ -342,11 +699,12 @@ fun AiAssistantScreen(
     }
 
     val suggestedPrompts = listOf(
-        "Open brave on laptop",
-        "Open chrome on laptop",
-        "Open vscode on laptop",
-        "Is laptop connected?",
-        "Check my phone battery"
+        "Open WhatsApp in Brave from Brave shortcuts",
+        "Open Brave shortcuts",
+        "Open Chrome on laptop",
+        "Open VS Code",
+        "Check battery",
+        "Laptop status"
     )
 
     Column(
@@ -466,7 +824,7 @@ fun AiAssistantScreen(
                 onValueChange = { inputText = it },
                 placeholder = {
                     Text(
-                        text = if (voiceManager.isListening) "Listening... speak now" else "Ask Vex AI (e.g. open brave)...",
+                        text = if (voiceManager.isListening) "Listening... speak now" else "Ask Vex (e.g. open WhatsApp in Brave)...",
                         color = if (voiceManager.isListening) VexyronGreen else VexyronTextMuted,
                         fontSize = 13.sp
                     )
@@ -531,6 +889,10 @@ fun AiAssistantScreen(
 
 @Composable
 fun ChatBubble(message: ChatMessage) {
+    val isOutput = message.text.startsWith("💻 Output") ||
+            message.text.startsWith("⚠️ Output") ||
+            (message.text.contains("\n") && !message.isUser)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
@@ -558,12 +920,15 @@ fun ChatBubble(message: ChatMessage) {
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Text(
-                text = message.text,
-                color = if (message.isUser) VexyronTextPrimary else VexyronTextSecondary,
-                fontSize = 13.sp,
-                lineHeight = 18.sp
-            )
+            SelectionContainer {
+                Text(
+                    text = message.text,
+                    color = if (message.isUser) VexyronTextPrimary else VexyronTextSecondary,
+                    fontSize = 13.sp,
+                    fontFamily = if (isOutput) FontFamily.Monospace else FontFamily.Default,
+                    lineHeight = 18.sp
+                )
+            }
         }
     }
 }

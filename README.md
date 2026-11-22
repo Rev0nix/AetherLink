@@ -10,7 +10,7 @@
 [![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows)](https://github.com/Rev0nix/VEXYRON/releases)
 [![Linux](https://img.shields.io/badge/Linux-Debian%20%2F%20Ubuntu-FCC624?logo=linux)](https://github.com/Rev0nix/VEXYRON/releases)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions)](.github/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/Release-v2.3.7-success?logo=github)](https://github.com/Rev0nix/VEXYRON/releases)
+[![Release](https://img.shields.io/badge/Release-v2.3.8-success?logo=github)](https://github.com/Rev0nix/VEXYRON/releases)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 
 *Unify your Android smartphone and Desktop workstation (Windows & Linux) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, bi-directional remote terminal with sudo support, and Vex AI remote application launching.*

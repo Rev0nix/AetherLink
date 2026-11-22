@@ -386,7 +386,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                             request_id,
                             json!({
                                 "name": "VEXYRON Desktop",
-                                "version": "2.3.7",
+                                "version": "2.3.8",
                                 "os": os_type,
                                 "platform": os_type,
                                 "hostname": host_name

@@ -7,7 +7,6 @@ import {
   X,
   Check,
   Copy,
-  Terminal,
   Wifi,
   Sparkles,
   Info,

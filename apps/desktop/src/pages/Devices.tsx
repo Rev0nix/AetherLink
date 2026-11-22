@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   BatteryCharging,
   QrCode,
-  Terminal,
   Copy,
   Check,
   Radio,

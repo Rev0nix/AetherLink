@@ -4,11 +4,16 @@ import android.util.Log
 import com.vexyron.android.service.network.ConnectionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 enum class TerminalEntryType {
@@ -25,6 +30,14 @@ data class TerminalEntry(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+data class CommandResult(
+    val command: String,
+    val stdout: String,
+    val stderr: String,
+    val exitCode: Int,
+    val cwd: String
+)
+
 object TerminalManager {
     private const val TAG = "TerminalManager"
 
@@ -37,6 +50,9 @@ object TerminalManager {
         )
     )
     val entries: StateFlow<List<TerminalEntry>> = _entries.asStateFlow()
+
+    private val _commandResults = MutableSharedFlow<CommandResult>(extraBufferCapacity = 32)
+    val commandResults: SharedFlow<CommandResult> = _commandResults.asSharedFlow()
 
     private val _cwd = MutableStateFlow("~")
     val cwd: StateFlow<String> = _cwd.asStateFlow()
@@ -52,6 +68,17 @@ object TerminalManager {
 
     fun setSudoPassword(password: String?) {
         _sudoPassword.value = password
+    }
+
+    suspend fun executeCommandWithOutput(command: String, timeoutMs: Long = 4000): CommandResult? {
+        if (!ConnectionManager.isConnected) return null
+        val ok = ConnectionManager.sendTerminalCommand(command, _cwd.value, _sudoPassword.value)
+        if (!ok) return null
+        return withTimeoutOrNull(timeoutMs) {
+            _commandResults.first {
+                it.command.trim() == command.trim() || it.command.isNotBlank()
+            }
+        }
     }
 
     fun initSession() {
@@ -157,6 +184,16 @@ object TerminalManager {
         } else {
             _entries.value = current
         }
+
+        _commandResults.tryEmit(
+            CommandResult(
+                command = command,
+                stdout = stdout,
+                stderr = stderr,
+                exitCode = exitCode,
+                cwd = newCwd
+            )
+        )
     }
 
     fun clear() {

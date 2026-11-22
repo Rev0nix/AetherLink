@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.7}"
+VERSION="${1:-v2.3.8}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -64,7 +64,7 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.7")
+tag = os.environ.get("VERSION", "v2.3.8")
 
 repo = "Rev0nix/VEXYRON"
 print(f"--> Target repository: {repo}")
@@ -115,10 +115,10 @@ sudo apt install ./VEXYRON-Linux.deb
 ---
 
 ### ⚡ What's New in {tag}:
-- **Vex AI Assistant:** Ask Vex AI on phone to launch apps on laptop (e.g. *"open brave"*, *"open chrome"*, *"open vscode"*, *"open spotify"*, *"open calculator"*, *"open files"*, *"open youtube"*).
-- **Remote Terminal Layout & Keyboard Insets:** Fixed soft keyboard padding so the command input bar and quick chips rise cleanly above the on-screen keyboard when typing.
-- **Sudo Authentication Engine:** Seamless `-S -p ""` standard input delivery with automatic typo correction (`shotdown` -> `shutdown`, `rebot` -> `reboot`) preventing TTY stalls.
-- **Brand & Ecosystem Transition:** Official GitHub repository transition to **Rev0nix/VEXYRON**.
+- **Vex AI Assistant:** Greet as "Hey! I am Vex" and full support for all user commands including launching WhatsApp in Brave from Brave shortcuts/PWAs (`open whatsapp in brave from brave shortcuts`), web apps, system controls (volume, lock, sleep, shutdown, screenshot), and live command output in chat.
+- **Laptop Application Clean-Up:** Removed Terminal from the laptop application's sidebar and navigation.
+- **Universal Command Execution:** Live terminal output streaming into AI Assistant chat with monospace formatting and text copy selection.
+- **Cross-Platform Compatibility:** Enhanced browser app and shortcut launching for Linux and Windows.
 """
 
 rel = None
