@@ -37,4 +37,6 @@ Thumbs.db
 # Packaging
 *.deb
 *.exe
+*.AppImage
 aetherlink-desktop/
+vexyron-desktop/

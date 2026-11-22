@@ -55,7 +55,8 @@ git tag -f "$VERSION"
 git push -f origin "$VERSION"
 
 # 4. Direct Upload to GitHub Releases
-python3 - <<EOF
+export VERSION
+python3 - << 'EOF'
 import urllib.request, json, os
 
 token = ''
@@ -70,7 +71,7 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = "$VERSION"
+tag = os.environ.get("VERSION", "v2.3.1")
 url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
@@ -96,7 +97,7 @@ Universal device synchronization across Android, Windows, and Linux laptops & de
 #### 🪟 Windows Laptops:
 1. Run `VEXYRON-Windows-Setup.exe`.
 2. The installer runs in **currentUser** mode and installs into `%LocalAppData%\\Programs\\VEXYRON` without needing any administrator privileges or triggering UAC blocks.
-3. If Windows Defender SmartScreen displays a warning, click **More info** &rarr; **Run anyway**.
+3. If Windows Defender SmartScreen displays a warning, click **More info** -> **Run anyway**.
 
 #### 🐧 Linux Laptops:
 * **Recommended (AppImage)**: Download `VEXYRON-Linux.AppImage`, make it executable (`chmod +x VEXYRON-Linux.AppImage`), and run it directly. It works across Ubuntu 24.04/22.04, Fedora, Arch, Linux Mint, and openSUSE without needing root or package managers.
