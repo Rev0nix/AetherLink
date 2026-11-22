@@ -614,7 +614,7 @@ export default function Settings() {
             {/* Quick Link Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
-                onClick={() => openUrl("https://github.com/Rev0nix/AetherLink")}
+                onClick={() => openUrl("https://github.com/Rev0nix/VEXYRON")}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium border border-[var(--border-color)] transition cursor-pointer"
               >
                 <ExternalLink size={13} />
@@ -623,7 +623,7 @@ export default function Settings() {
 
               <button
                 onClick={() =>
-                  openUrl("https://github.com/Rev0nix/AetherLink/releases")
+                  openUrl("https://github.com/Rev0nix/VEXYRON/releases")
                 }
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium border border-[var(--border-color)] transition cursor-pointer"
               >

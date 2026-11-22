@@ -50,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -82,6 +83,7 @@ import com.aetherlink.android.core.designsystem.AetherTextPrimary
 import com.aetherlink.android.core.designsystem.AetherTextSecondary
 import com.aetherlink.android.core.voice.VoiceManager
 import com.aetherlink.android.domain.model.DeviceState
+import com.aetherlink.android.service.network.ConnectionManager
 import com.aetherlink.android.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,52 +106,186 @@ fun AiAssistantScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
+    val hostOs by ConnectionManager.hostOs.collectAsState()
+    val hostName by ConnectionManager.hostName.collectAsState()
+    val isConnected = ConnectionManager.isConnected && vm.state == DeviceState.CONNECTED
+
     val density = LocalDensity.current
     val imeBottom = WindowInsets.ime.getBottom(density)
     val isKeyboardOpen = WindowInsets.isImeVisible || imeBottom > 0
 
     val messages = remember {
         mutableStateListOf(
-            ChatMessage("1", "Hello! I am Aether AI. How can I assist you with your connected devices today?", isUser = false)
+            ChatMessage("1", "Hello! I am Vex AI. I can control your laptop, open applications like Brave, Chrome or VS Code, check system status, and manage workflows.", isUser = false)
         )
     }
 
+    fun buildAppLaunchCommand(rawText: String, isWindows: Boolean): Pair<String, String>? {
+        val lower = rawText.lowercase().trim()
+        val cleaned = lower
+            .removePrefix("open ")
+            .removePrefix("launch ")
+            .removePrefix("start ")
+            .removePrefix("run ")
+            .replace(" in laptop", "")
+            .replace(" on laptop", "")
+            .replace(" in desktop", "")
+            .replace(" on desktop", "")
+            .trim()
+
+        if (cleaned.isEmpty()) return null
+
+        return if (isWindows) {
+            when (cleaned) {
+                "brave", "brave browser" -> Pair("Start-Process brave -ErrorAction SilentlyContinue || start brave", "Brave")
+                "chrome", "google chrome" -> Pair("start chrome", "Google Chrome")
+                "firefox", "mozilla firefox" -> Pair("start firefox", "Firefox")
+                "code", "vscode", "vs code", "visual studio code" -> Pair("start code", "VS Code")
+                "spotify" -> Pair("start spotify", "Spotify")
+                "calc", "calculator" -> Pair("start calc", "Calculator")
+                "notepad", "text editor" -> Pair("start notepad", "Notepad")
+                "terminal", "cmd", "powershell" -> Pair("start powershell", "PowerShell")
+                "files", "explorer", "file explorer" -> Pair("start explorer", "File Explorer")
+                "settings" -> Pair("start ms-settings:", "Windows Settings")
+                "youtube" -> Pair("start https://www.youtube.com", "YouTube")
+                "google" -> Pair("start https://www.google.com", "Google")
+                "github" -> Pair("start https://www.github.com", "GitHub")
+                else -> {
+                    if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+                        Pair("start $cleaned", cleaned)
+                    } else {
+                        Pair("start $cleaned", cleaned.replaceFirstChar { it.uppercase() })
+                    }
+                }
+            }
+        } else {
+            // Linux
+            when (cleaned) {
+                "brave", "brave browser" -> Pair(
+                    "(nohup /snap/bin/brave >/dev/null 2>&1 &) || (nohup brave >/dev/null 2>&1 &) || (nohup brave-browser >/dev/null 2>&1 &) || (gtk-launch brave-browser >/dev/null 2>&1 &) || (gtk-launch brave_brave >/dev/null 2>&1 &)",
+                    "Brave Browser"
+                )
+                "chrome", "google chrome" -> Pair(
+                    "(nohup google-chrome-stable >/dev/null 2>&1 &) || (nohup google-chrome >/dev/null 2>&1 &) || (nohup chromium >/dev/null 2>&1 &) || (gtk-launch google-chrome >/dev/null 2>&1 &)",
+                    "Google Chrome"
+                )
+                "firefox", "mozilla firefox" -> Pair(
+                    "(nohup firefox >/dev/null 2>&1 &) || (gtk-launch firefox >/dev/null 2>&1 &)",
+                    "Firefox"
+                )
+                "code", "vscode", "vs code", "visual studio code" -> Pair(
+                    "(nohup code >/dev/null 2>&1 &) || (gtk-launch code >/dev/null 2>&1 &)",
+                    "VS Code"
+                )
+                "spotify" -> Pair(
+                    "(nohup spotify >/dev/null 2>&1 &) || (nohup /snap/bin/spotify >/dev/null 2>&1 &) || (gtk-launch spotify >/dev/null 2>&1 &)",
+                    "Spotify"
+                )
+                "calc", "calculator" -> Pair(
+                    "(nohup gnome-calculator >/dev/null 2>&1 &) || (nohup kcalc >/dev/null 2>&1 &)",
+                    "Calculator"
+                )
+                "terminal", "bash" -> Pair(
+                    "(nohup gnome-terminal >/dev/null 2>&1 &) || (nohup xterm >/dev/null 2>&1 &) || (nohup konsole >/dev/null 2>&1 &)",
+                    "Terminal"
+                )
+                "files", "file manager", "nautilus" -> Pair(
+                    "(xdg-open ~ >/dev/null 2>&1 &) || (nohup nautilus >/dev/null 2>&1 &)",
+                    "File Manager"
+                )
+                "settings" -> Pair(
+                    "(nohup gnome-control-center >/dev/null 2>&1 &)",
+                    "System Settings"
+                )
+                "youtube" -> Pair("xdg-open \"https://www.youtube.com\" >/dev/null 2>&1 &", "YouTube")
+                "google" -> Pair("xdg-open \"https://www.google.com\" >/dev/null 2>&1 &", "Google")
+                "github" -> Pair("xdg-open \"https://www.github.com\" >/dev/null 2>&1 &", "GitHub")
+                else -> {
+                    if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+                        Pair("xdg-open \"$cleaned\" >/dev/null 2>&1 &", cleaned)
+                    } else {
+                        Pair(
+                            "(gtk-launch $cleaned >/dev/null 2>&1 &) || (nohup $cleaned >/dev/null 2>&1 &) || (xdg-open $cleaned >/dev/null 2>&1 &)",
+                            cleaned.replaceFirstChar { it.uppercase() }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun handleSend(text: String) {
-        if (text.isBlank()) return
-        messages.add(ChatMessage(System.currentTimeMillis().toString(), text, isUser = true))
+        val trimmed = text.trim()
+        if (trimmed.isBlank()) return
+        messages.add(ChatMessage(System.currentTimeMillis().toString(), trimmed, isUser = true))
         inputText = ""
 
         scope.launch {
             delay(100)
             listState.animateScrollToItem(messages.size - 1)
 
-            // Dynamic contextual response
-            delay(600)
-            val reply = when {
-                text.contains("battery", ignoreCase = true) -> {
+            val lower = trimmed.lowercase()
+            val isWindows = hostOs.equals("Windows", ignoreCase = true)
+            val osName = if (hostOs != "Unknown") hostOs else "Laptop"
+            val targetName = if (hostName.isNotBlank() && hostName != "Laptop") hostName else osName
+
+            // Check if user is asking to launch/open an application
+            val isAppLaunchIntent = lower.startsWith("open ") ||
+                    lower.startsWith("launch ") ||
+                    lower.startsWith("start ") ||
+                    lower.startsWith("run ") ||
+                    lower == "brave" || lower == "chrome" || lower == "firefox" ||
+                    lower == "code" || lower == "vscode" || lower == "spotify" ||
+                    lower == "calculator" || lower == "terminal"
+
+            val reply = if (isAppLaunchIntent) {
+                if (!isConnected) {
+                    "⚠️ Your laptop is currently disconnected. Tap 'Connect' on the Home screen to link via Wi-Fi, then I will open applications for you."
+                } else {
+                    val launchPair = buildAppLaunchCommand(trimmed, isWindows)
+                    if (launchPair != null) {
+                        val (cmd, appName) = launchPair
+                        // Trigger background execution on the laptop
+                        ConnectionManager.sendTerminalCommand(cmd, "~")
+                        "🚀 Opening $appName on your $osName laptop ($targetName)..."
+                    } else {
+                        "I couldn't identify the application name. Try saying 'open brave', 'open chrome', or 'open vscode'."
+                    }
+                }
+            } else when {
+                lower.contains("battery") -> {
                     val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { filter ->
                         context.registerReceiver(null, filter)
                     }
                     val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 85
-                    "Your smartphone battery level is at $level%. Optimal for device sync."
+                    "🔋 Your smartphone battery is at $level%."
                 }
-                text.contains("connected", ignoreCase = true) -> {
-                    if (vm.state == DeviceState.CONNECTED) {
-                        "Yes! You are currently connected to ${vm.devices.firstOrNull()?.name ?: "Desktop"} on port 45876."
+                lower.contains("connect") || lower.contains("status") -> {
+                    if (isConnected) {
+                        "🟢 Connected to $osName laptop ($targetName) on port 45876. You can send commands or say 'open brave' to launch applications."
                     } else {
-                        "Your desktop is currently offline or disconnected. Tap 'Connect' on the Home dashboard to pair."
+                        "🔴 Laptop is currently disconnected. Go to the Home screen and tap 'Connect' to pair via Wi-Fi."
                     }
                 }
-                text.contains("speed", ignoreCase = true) -> {
-                    "Your local Wi-Fi connection channel speed is operating at approximately ~24.5 MB/s."
+                lower.contains("speed") -> {
+                    "⚡ Local Wi-Fi connection channel operating at ultra-low latency with transfer throughput up to ~25 MB/s."
                 }
-                text.contains("photo", ignoreCase = true) || text.contains("file", ignoreCase = true) -> {
-                    "I can trigger the file transfer engine! Head over to the Files tab to choose items for high-speed transfer."
+                lower.contains("photo") || lower.contains("file") -> {
+                    "📁 You can beam files directly to your laptop's Downloads folder! Head over to the Files tab to send images, docs, and media."
+                }
+                lower.contains("help") -> {
+                    "🤖 I am Vex AI! Here is what I can do:\n• Open apps on laptop: 'open brave', 'open chrome', 'open vscode', 'open calculator'\n• Open websites: 'open youtube', 'open github'\n• Check device status: 'is laptop connected', 'battery level'\n• Remote control: Use the Remote Terminal for full bash & PowerShell commands."
                 }
                 else -> {
-                    "Understood. I am monitoring your AetherLink device ecosystem and ready to execute your workflow."
+                    if (isConnected) {
+                        "Understood! I'm linked to your $osName laptop. You can ask me to open apps (e.g. 'open brave', 'open chrome') or use the Remote Terminal to run shell commands."
+                    } else {
+                        "Hello! I am Vex AI. Connect your phone to your laptop on the Home screen to launch applications, beam files, and sync clipboard seamlessly."
+                    }
                 }
             }
+
+            delay(400)
             messages.add(ChatMessage((System.currentTimeMillis() + 1).toString(), reply, isUser = false))
             delay(100)
             listState.animateScrollToItem(messages.size - 1)
@@ -206,11 +342,11 @@ fun AiAssistantScreen(
     }
 
     val suggestedPrompts = listOf(
-        "Is my desktop connected?",
-        "Check my phone battery.",
-        "Send my latest photos to my laptop.",
-        "Check my connection speed.",
-        "Find recently received files."
+        "Open brave on laptop",
+        "Open chrome on laptop",
+        "Open vscode on laptop",
+        "Is laptop connected?",
+        "Check my phone battery"
     )
 
     Column(
@@ -241,7 +377,7 @@ fun AiAssistantScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "Aether AI",
+                        contentDescription = "Vex AI",
                         tint = AetherTextPrimary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -251,23 +387,23 @@ fun AiAssistantScreen(
 
                 Column {
                     Text(
-                        text = "Aether AI",
+                        text = "Vex AI",
                         color = AetherTextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Device Ecosystem Assistant",
-                        color = AetherTextMuted,
+                        text = if (isConnected) "Connected • ${if (hostOs != "Unknown") hostOs else "Laptop"}" else "Device Ecosystem Assistant",
+                        color = if (isConnected) AetherGreen else AetherTextMuted,
                         fontSize = 11.sp
                     )
                 }
             }
 
             AetherStatusBadge(
-                text = "Online",
-                indicatorColor = AetherCyan
+                text = if (isConnected) "Online" else "Ready",
+                indicatorColor = if (isConnected) AetherGreen else AetherCyan
             )
         }
 
@@ -330,7 +466,7 @@ fun AiAssistantScreen(
                 onValueChange = { inputText = it },
                 placeholder = {
                     Text(
-                        text = if (voiceManager.isListening) "Listening... speak now" else "Ask Aether AI...",
+                        text = if (voiceManager.isListening) "Listening... speak now" else "Ask Vex AI (e.g. open brave)...",
                         color = if (voiceManager.isListening) AetherGreen else AetherTextMuted,
                         fontSize = 13.sp
                     )
@@ -368,24 +504,24 @@ fun AiAssistantScreen(
                 Icon(
                     imageVector = Icons.Default.Mic,
                     contentDescription = if (isListening) "Listening" else "Voice Input",
-                    tint = if (isListening) AetherGreen else AetherCyan,
-                    modifier = Modifier.size(20.dp)
+                    tint = if (isListening) AetherGreen else AetherTextSecondary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            // Send Button
+            // Send Icon Button
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(AetherGradientPrimary)
-                    .clickable { handleSend(inputText) },
+                    .background(if (inputText.isNotBlank()) AetherCyan else AetherSurfaceElevated)
+                    .clickable(enabled = inputText.isNotBlank()) { handleSend(inputText) },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
-                    tint = AetherTextPrimary,
+                    tint = if (inputText.isNotBlank()) AetherBg else AetherTextMuted,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -399,50 +535,34 @@ fun ChatBubble(message: ChatMessage) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
     ) {
-        if (!message.isUser) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(AetherGradientPrimary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = null,
-                    tint = AetherTextPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-        }
-
         Box(
             modifier = Modifier
                 .clip(
                     RoundedCornerShape(
-                        topStart = 18.dp,
-                        topEnd = 18.dp,
-                        bottomStart = if (message.isUser) 18.dp else 4.dp,
-                        bottomEnd = if (message.isUser) 4.dp else 18.dp
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (message.isUser) 16.dp else 4.dp,
+                        bottomEnd = if (message.isUser) 4.dp else 16.dp
                     )
                 )
-                .background(
-                    if (message.isUser) AetherPurple
-                    else AetherSurfaceElevated
-                )
+                .background(if (message.isUser) AetherCyan.copy(alpha = 0.2f) else AetherCardBg)
                 .border(
-                    1.dp,
-                    if (message.isUser) AetherPurple else AetherBorder,
-                    RoundedCornerShape(18.dp)
+                    width = 1.dp,
+                    color = if (message.isUser) AetherCyan.copy(alpha = 0.4f) else AetherBorder,
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (message.isUser) 16.dp else 4.dp,
+                        bottomEnd = if (message.isUser) 4.dp else 16.dp
+                    )
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
                 text = message.text,
-                color = AetherTextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 20.sp
+                color = if (message.isUser) AetherTextPrimary else AetherTextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
             )
         }
     }

@@ -213,19 +213,23 @@ pub fn run_terminal_command(
 
     #[cfg(not(target_os = "windows"))]
     {
-        let is_sudo = cmd_trimmed.starts_with("sudo ");
-        let mut actual_cmd = cmd_trimmed.to_string();
+        // Auto-correct common typos like "shotdown" -> "shutdown", "rebot" -> "reboot"
+        let normalized_cmd = cmd_trimmed
+            .replace("shotdown", "shutdown")
+            .replace("rebot", "reboot");
+        let is_sudo = normalized_cmd.starts_with("sudo ");
+        let mut actual_cmd = normalized_cmd.clone();
         let mut stdin_data: Option<Vec<u8>> = None;
 
+        let effective_pass = sudo_pwd.map(|s| s.trim()).filter(|s| !s.is_empty());
+
         if is_sudo {
-            if let Some(pass) = sudo_pwd {
-                if !pass.is_empty() {
-                    // Rewrite to sudo -S -k -p "" so it reads cleanly from stdin without prompting on tty
-                    actual_cmd = cmd_trimmed.replacen("sudo ", "sudo -S -k -p \"\" ", 1);
-                    let mut data = pass.as_bytes().to_vec();
-                    data.push(b'\n');
-                    stdin_data = Some(data);
-                }
+            if let Some(pass) = effective_pass {
+                // Rewrite to sudo -S -p "" so it reads cleanly from stdin without prompting on tty
+                actual_cmd = normalized_cmd.replacen("sudo ", "sudo -S -p \"\" ", 1);
+                let mut data = pass.as_bytes().to_vec();
+                data.push(b'\n');
+                stdin_data = Some(data);
             } else {
                 // Check if passwordless sudo is configured
                 let check_status = Command::new("sudo")
@@ -233,18 +237,18 @@ pub fn run_terminal_command(
                     .status();
                 if let Ok(st) = check_status {
                     if st.success() {
-                        actual_cmd = cmd_trimmed.replacen("sudo ", "sudo -n ", 1);
+                        actual_cmd = normalized_cmd.replacen("sudo ", "sudo -n ", 1);
                     } else {
                         return (
                             String::new(),
-                            "sudo: Password required. Tap the 🔑 Sudo key in your phone Remote Terminal to enter your laptop's sudo password.".to_string(),
+                            "sudo: Password required. Tap the [Sudo] button at the top of your phone Remote Terminal to enter your laptop password.".to_string(),
                             1,
                         );
                     }
                 } else {
                     return (
                         String::new(),
-                        "sudo: Password required. Tap the 🔑 Sudo key in your phone Remote Terminal to enter your laptop's sudo password.".to_string(),
+                        "sudo: Password required. Tap the [Sudo] button at the top of your phone Remote Terminal to enter your laptop password.".to_string(),
                         1,
                     );
                 }
@@ -382,7 +386,7 @@ fn handle_client(stream: TcpStream, app_handle: Option<tauri::AppHandle>) {
                             request_id,
                             json!({
                                 "name": "VEXYRON Desktop",
-                                "version": "2.3.6",
+                                "version": "2.3.7",
                                 "os": os_type,
                                 "platform": os_type,
                                 "hostname": host_name

@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,7 +32,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Security
@@ -65,12 +67,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.aetherlink.android.core.components.AetherPrimaryButton
 import com.aetherlink.android.core.components.AetherSecondaryButton
-import com.aetherlink.android.core.designsystem.AetherBg
 import com.aetherlink.android.core.designsystem.AetherBorder
 import com.aetherlink.android.core.designsystem.AetherCardBg
 import com.aetherlink.android.core.designsystem.AetherCyan
 import com.aetherlink.android.core.designsystem.AetherGreen
-import com.aetherlink.android.core.designsystem.AetherPurple
 import com.aetherlink.android.core.designsystem.AetherRed
 import com.aetherlink.android.core.designsystem.AetherSurfaceElevated
 import com.aetherlink.android.core.designsystem.AetherTextMuted
@@ -109,7 +109,10 @@ fun RemoteTerminalScreen(
 
     fun executeWithSudoCheck(cmd: String) {
         val trimmed = cmd.trim()
+            .replace("shotdown", "shutdown")
+            .replace("rebot", "reboot")
         if (trimmed.isEmpty()) return
+
         if (!isWindows && trimmed.startsWith("sudo ", ignoreCase = true) && sudoPassword.isNullOrBlank()) {
             pendingSudoCommand = trimmed
             sudoDialogInput = ""
@@ -137,6 +140,9 @@ fun RemoteTerminalScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF090D16))
+            .statusBarsPadding()
+            .imePadding()
+            .navigationBarsPadding()
     ) {
         // 1. TOP APP BAR
         Box(
@@ -144,87 +150,84 @@ fun RemoteTerminalScreen(
                 .fillMaxWidth()
                 .background(AetherCardBg)
                 .border(1.dp, AetherBorder)
-                .padding(horizontal = 8.dp, vertical = 10.dp)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = AetherTextPrimary
+                // Back button
+                IconButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = AetherTextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // Terminal icon
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(AetherCyan.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Terminal,
+                        contentDescription = "Terminal",
+                        tint = AetherCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Title & Subtitle with weight(1f) to prevent pushing right action buttons off screen
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Remote Terminal",
+                        color = AetherTextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (isConnected) AetherGreen else AetherRed)
                         )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(AetherCyan.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Terminal,
-                            contentDescription = "Terminal",
-                            tint = AetherCyan,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Column {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        val statusText = if (isConnected) {
+                            val os = if (hostOs != "Unknown") hostOs else "Laptop"
+                            val name = if (hostName.isNotBlank() && hostName != "Laptop") " ($hostName)" else ""
+                            "$os$name"
+                        } else "Disconnected"
                         Text(
-                            text = "Remote Terminal",
-                            color = AetherTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            text = statusText,
+                            color = if (isConnected) AetherGreen else AetherTextMuted,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isConnected) AetherGreen else AetherRed)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = if (isConnected) {
-                                    val osStr = if (hostOs != "Unknown") hostOs else "Laptop"
-                                    val nameStr = if (hostName.isNotBlank() && hostName != "Laptop") " ($hostName)" else ""
-                                    "Connected • $osStr$nameStr"
-                                } else "Disconnected",
-                                color = if (isConnected) AetherGreen else AetherTextMuted,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            if (isConnected && hostOs != "Unknown") {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4).copy(alpha = 0.25f) else AetherGreen.copy(alpha = 0.25f))
-                                        .border(1.dp, if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF0078D4) else AetherGreen, RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 5.dp, vertical = 1.dp)
-                                ) {
-                                    Text(
-                                        text = if (hostOs.equals("Windows", ignoreCase = true)) "Windows" else "Linux",
-                                        color = if (hostOs.equals("Windows", ignoreCase = true)) Color(0xFF60CDFF) else AetherGreen,
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Right action buttons: Sudo + Clear
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Sudo button (Linux only or generic root auth)
                     if (!isWindows) {
                         Box(
                             modifier = Modifier
@@ -240,35 +243,46 @@ fun RemoteTerminalScreen(
                                     pendingSudoCommand = null
                                     showSudoDialog = true
                                 }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(horizontal = 9.dp, vertical = 6.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Default.Security,
-                                    contentDescription = "Sudo Password",
+                                    contentDescription = "Sudo Auth",
                                     tint = if (sudoPassword != null) Color(0xFFFACC15) else AetherTextMuted,
                                     modifier = Modifier.size(13.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Text(
-                                    text = if (sudoPassword != null) "sudo: set" else "sudo",
-                                    color = if (sudoPassword != null) Color(0xFFFACC15) else AetherTextMuted,
+                                    text = "Sudo",
+                                    color = if (sudoPassword != null) Color(0xFFFACC15) else AetherTextSecondary,
                                     fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold
                                 )
+                                if (sudoPassword != null) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF22C55E))
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
 
                     IconButton(
-                        onClick = { TerminalManager.clear() }
+                        onClick = { TerminalManager.clear() },
+                        modifier = Modifier.size(34.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteSweep,
                             contentDescription = "Clear Console",
-                            tint = AetherTextMuted
+                            tint = AetherTextMuted,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -480,7 +494,7 @@ fun RemoteTerminalScreen(
                         },
                         placeholder = {
                             Text(
-                                if (isWindows) "Enter PowerShell command..." else "Enter command (e.g. ls, sudo apt update)...",
+                                if (isWindows) "Enter PowerShell command..." else "Enter command (e.g. ls, sudo shutdown now)...",
                                 color = AetherTextMuted,
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace
@@ -573,7 +587,7 @@ fun RemoteTerminalScreen(
             text = {
                 Column {
                     Text(
-                        text = "Running privileged sudo commands requires your laptop's user password. It will be securely used for this connection session.",
+                        text = "Running privileged sudo commands requires your laptop user password. It will be securely used for this connection session.",
                         color = AetherTextSecondary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
@@ -597,11 +611,14 @@ fun RemoteTerminalScreen(
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            TerminalManager.setSudoPassword(sudoDialogInput.ifBlank { null })
-                            showSudoDialog = false
-                            pendingSudoCommand?.let { cmd ->
-                                pendingSudoCommand = null
-                                TerminalManager.executeCommand(cmd)
+                            val pass = sudoDialogInput.trim()
+                            if (pass.isNotEmpty()) {
+                                TerminalManager.setSudoPassword(pass)
+                                showSudoDialog = false
+                                pendingSudoCommand?.let { cmd ->
+                                    pendingSudoCommand = null
+                                    TerminalManager.executeCommand(cmd, pass)
+                                }
                             }
                         }),
                         singleLine = true,
@@ -621,11 +638,14 @@ fun RemoteTerminalScreen(
                 AetherPrimaryButton(
                     text = if (pendingSudoCommand != null) "Run Command" else "Save Password",
                     onClick = {
-                        TerminalManager.setSudoPassword(sudoDialogInput.ifBlank { null })
-                        showSudoDialog = false
-                        pendingSudoCommand?.let { cmd ->
-                            pendingSudoCommand = null
-                            TerminalManager.executeCommand(cmd)
+                        val pass = sudoDialogInput.trim()
+                        if (pass.isNotEmpty()) {
+                            TerminalManager.setSudoPassword(pass)
+                            showSudoDialog = false
+                            pendingSudoCommand?.let { cmd ->
+                                pendingSudoCommand = null
+                                TerminalManager.executeCommand(cmd, pass)
+                            }
                         }
                     }
                 )
@@ -656,4 +676,3 @@ fun RemoteTerminalScreen(
         )
     }
 }
-

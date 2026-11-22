@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="${1:-v2.3.6}"
+VERSION="${1:-v2.3.7}"
 echo "============================================="
 echo " Deploying VEXYRON Release: $VERSION"
 echo "============================================="
@@ -30,6 +30,7 @@ fi
 
 if [ ! -f "VEXYRON-Windows-Setup.exe" ]; then
     echo "--> Fetching Windows setup package..."
+    curl -sL "https://github.com/Rev0nix/VEXYRON/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || \
     curl -sL "https://github.com/Rev0nix/AetherLink/releases/download/v2.3.1/VEXYRON-Windows-Setup.exe" -o VEXYRON-Windows-Setup.exe || true
 fi
 
@@ -64,12 +65,24 @@ headers = {
     'Authorization': f'Bearer {token}'
 }
 
-tag = os.environ.get("VERSION", "v2.3.6")
-url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/tags/{tag}'
+tag = os.environ.get("VERSION", "v2.3.7")
+
+# Check if Rev0nix/VEXYRON exists on GitHub; otherwise fall back to Rev0nix/AetherLink
+repo = "Rev0nix/VEXYRON"
+try:
+    test_req = urllib.request.Request(f'https://api.github.com/repos/{repo}', headers=headers)
+    with urllib.request.urlopen(test_req) as r:
+        pass
+except Exception:
+    repo = "Rev0nix/AetherLink"
+
+print(f"--> Target repository: {repo}")
+
+url = f'https://api.github.com/repos/{repo}/releases/tags/{tag}'
 
 body = f"""## 🚀 VEXYRON Official Release ({tag})
 
-Universal cross-device synchronization and remote control ecosystem connecting Android phones with Windows and Linux laptops.
+Universal cross-device synchronization, app launcher AI, and remote control ecosystem connecting Android phones with Windows and Linux laptops.
 
 Licensed under the **PolyForm Noncommercial License 1.0.0**.
 
@@ -79,9 +92,9 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 
 | Platform | Package File | Description |
 |:---|:---|:---|
-| 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ mobile application with Remote Terminal |
-| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (in-app updates & auto-overwrite) |
-| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/Rev0nix/AetherLink/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade & in-app updates) |
+| 📱 **Android** | [**VEXYRON-Android.apk**](https://github.com/{repo}/releases/download/{tag}/VEXYRON-Android.apk) | Android 8.0+ mobile app with Vex AI app launcher & Remote Terminal |
+| 🪟 **Windows** | [**VEXYRON-Windows-Setup.exe**](https://github.com/{repo}/releases/download/{tag}/VEXYRON-Windows-Setup.exe) | Standard Windows laptop installer (in-app updates & auto-overwrite) |
+| 🐧 **Linux** | [**VEXYRON-Linux.deb**](https://github.com/{repo}/releases/download/{tag}/VEXYRON-Linux.deb) | Debian / Ubuntu 64-bit native package (clean upgrade & in-app updates) |
 
 ---
 
@@ -89,7 +102,7 @@ Licensed under the **PolyForm Noncommercial License 1.0.0**.
 
 > **Important for Existing Installations:**  
 > If Android displays *"App not installed as package appears to be invalid"*, this is caused by Android's signature verification blocking an update over an older development build or previous version signed with a different key.  
-> **To resolve:** Simply **uninstall the existing AetherLink / VEXYRON app** from your phone, then install the new `VEXYRON-Android.apk`. All updates from v2.3.5 onwards share the permanent release signing certificate.
+> **To resolve:** Simply **uninstall the existing AetherLink / VEXYRON app** from your phone, then install the new `VEXYRON-Android.apk`. All updates share the permanent release signing certificate.
 
 ---
 
@@ -110,31 +123,20 @@ sudo apt install ./VEXYRON-Linux.deb
 
 ---
 
-### 🌟 What's New in {tag}
-
-- 🔄 **In-App Updates for Laptops**:
-  Laptops can now update directly inside the application ("Update & Install In-App") without needing to manually hunt for files in the browser or file manager. Real-time downloading and launch indicators guide you through the process.
-- 🧹 **Automatic Overwrite & Legacy App Cleanup**:
-  Installing an update now replaces and overwrites old application files cleanly rather than creating side-by-side installations. Installers and application startup hooks automatically terminate background locked processes (`aether-link`, `aetherlink`, `desktop`, `vexyron`) and delete old residual `AetherLink` installation directories so apps can be uninstalled/updated without file-in-use blocks.
-- ⌨️ **Android Remote Terminal Keyboard Display Fix**:
-  Fixed an issue where tapping the command input prompt caused the Android software keyboard to hide the input box. Added IME padding so the prompt and quick command toolbar automatically elevate above the keyboard.
-- 📦 **Android In-App Update Installation Fix**:
-  Fixed update installation failures on Android 11–15 by moving APK download storage out of isolated internal cache and into accessible application download storage with proper file read flags and package installer URI permissions.
-- 🔍 **Automatic OS Recognition (Linux vs Windows)**:
-  Instant recognition of host OS when phone connects to laptop, with customized shell prompts and quick command toolbars.
-- 🪟 **Windowed Non-Fullscreen Mode**:
-  Disabled forced fullscreen takeover on both desktop and mobile.
-- 📦 **Strictly 3 Official Applications**:
-  Android (`VEXYRON-Android.apk`), Windows (`VEXYRON-Windows-Setup.exe`), and Linux (`VEXYRON-Linux.deb`).
+### ⚡ What's New in {tag}:
+- **Vex AI Assistant:** Ask Vex AI on phone to launch apps on laptop (e.g. *"open brave"*, *"open chrome"*, *"open vscode"*, *"open spotify"*, *"open calculator"*, *"open files"*, *"open youtube"*).
+- **Remote Terminal Layout & Keyboard Insets:** Fixed soft keyboard padding so the command input bar and quick chips rise cleanly above the on-screen keyboard when typing.
+- **Sudo Authentication Engine:** Seamless `-S -p ""` standard input delivery with automatic typo correction (`shotdown` -> `shutdown`, `rebot` -> `reboot`) preventing TTY stalls.
+- **Brand & Ecosystem Transition:** Official GitHub repository transition to **Rev0nix/VEXYRON**.
 """
 
+rel = None
 try:
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp:
         rel = json.loads(resp.read().decode())
         rel_id = rel['id']
-        # Update body
-        up_url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/{rel_id}'
+        up_url = f'https://api.github.com/repos/{repo}/releases/{rel_id}'
         up_payload = json.dumps({'name': f'VEXYRON {tag}', 'body': body}).encode('utf-8')
         up_req = urllib.request.Request(up_url, data=up_payload, headers=headers, method='PATCH')
         try:
@@ -142,7 +144,7 @@ try:
         except Exception:
             pass
 except urllib.error.HTTPError:
-    create_url = 'https://api.github.com/repos/Rev0nix/AetherLink/releases'
+    create_url = f'https://api.github.com/repos/{repo}/releases'
     payload = json.dumps({
         'tag_name': tag,
         'name': f'VEXYRON {tag}',
@@ -167,7 +169,7 @@ allowed_names = {name for name, _ in files}
 # Clean up any non-3-app assets from earlier releases
 for a in rel.get('assets', []):
     if a['name'] not in allowed_names:
-        del_url = f"https://api.github.com/repos/Rev0nix/AetherLink/releases/assets/{a['id']}"
+        del_url = f"https://api.github.com/repos/{repo}/releases/assets/{a['id']}"
         del_req = urllib.request.Request(del_url, headers=headers, method='DELETE')
         try:
             urllib.request.urlopen(del_req)
@@ -178,7 +180,7 @@ for a in rel.get('assets', []):
 for name, mime in files:
     if not os.path.exists(name): continue
     if name in existing_assets:
-        del_url = f'https://api.github.com/repos/Rev0nix/AetherLink/releases/assets/{existing_assets[name]}'
+        del_url = f'https://api.github.com/repos/{repo}/releases/assets/{existing_assets[name]}'
         del_req = urllib.request.Request(del_url, headers=headers, method='DELETE')
         try:
             urllib.request.urlopen(del_req)
@@ -186,7 +188,7 @@ for name, mime in files:
             pass
 
     size = os.path.getsize(name)
-    upload_url = f'https://uploads.github.com/repos/Rev0nix/AetherLink/releases/{rel_id}/assets?name={name}'
+    upload_url = f'https://uploads.github.com/repos/{repo}/releases/{rel_id}/assets?name={name}'
     h = headers.copy()
     h['Content-Type'] = mime
     h['Content-Length'] = str(size)
@@ -203,5 +205,5 @@ EOF
 
 echo "============================================="
 echo " Deployment Complete!"
-echo " URL: https://github.com/Rev0nix/AetherLink/releases/tag/$VERSION"
+echo " URL: https://github.com/Rev0nix/VEXYRON/releases/tag/$VERSION"
 echo "============================================="

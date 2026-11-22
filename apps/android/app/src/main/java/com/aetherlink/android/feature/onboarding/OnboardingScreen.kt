@@ -74,7 +74,7 @@ fun OnboardingScreen(
         ),
         OnboardingItem(
             title = "One Intelligent Ecosystem.",
-            description = "Control your connected devices and automate your workflow with intelligent Aether AI assistance.",
+            description = "Control your connected devices and automate your workflow with intelligent Vex AI assistance.",
             icon = Icons.Default.AutoAwesome
         )
     )

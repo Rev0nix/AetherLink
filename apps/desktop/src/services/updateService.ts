@@ -51,7 +51,7 @@ function isNewerVersion(latest: string, current: string): boolean {
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
-  currentVersion: "2.3.6",
+  currentVersion: "2.3.7",
   latestVersion: null,
   isUpdateAvailable: false,
   isChecking: false,
@@ -66,17 +66,28 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     set({ isChecking: true, statusMessage: null });
     try {
       const appInfo = await getAppInfo();
-      const currentVersion = appInfo?.version || "2.2.2";
+      const currentVersion = appInfo?.version || "2.3.7";
       set({ currentVersion });
 
-      const resp = await fetch(
-        "https://api.github.com/repos/Rev0nix/AetherLink/releases/latest",
+      let resp = await fetch(
+        "https://api.github.com/repos/Rev0nix/VEXYRON/releases/latest",
         {
           headers: {
             Accept: "application/vnd.github.v3+json",
           },
         }
       );
+
+      if (!resp.ok) {
+        resp = await fetch(
+          "https://api.github.com/repos/Rev0nix/AetherLink/releases/latest",
+          {
+            headers: {
+              Accept: "application/vnd.github.v3+json",
+            },
+          }
+        );
+      }
 
       if (!resp.ok) {
         throw new Error(`GitHub API returned status ${resp.status}`);
@@ -98,7 +109,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         version: latestVersion,
         title: data.name || `VEXYRON v${latestVersion}`,
         changelog: data.body || "No changelog provided for this release.",
-        releaseUrl: data.html_url || "https://github.com/Rev0nix/AetherLink/releases",
+        releaseUrl: data.html_url || "https://github.com/Rev0nix/VEXYRON/releases",
         publishedAt: data.published_at || new Date().toISOString(),
         assets,
       };
