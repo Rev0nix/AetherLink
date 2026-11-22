@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="vexyron-app-icon.png" width="128" height="128" alt="VEXYRON Logo" />
+
 # ⚡ VEXYRON
 
 **High-Performance, Local-First Cross-Device Continuity Ecosystem for Android & Desktop**
@@ -8,10 +10,12 @@
 [![Tauri](https://img.shields.io/badge/Desktop-Tauri%20%2B%20React-24C8DB?logo=tauri)](https://tauri.app/)
 [![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-3DDC84?logo=android)](https://developer.android.com/jetpack/compose)
 [![Windows](https://img.shields.io/badge/Windows-Supported-0078D6?logo=windows)](https://github.com/Rev0nix/VEXYRON/releases)
+[![Linux](https://img.shields.io/badge/Linux-Debian%20%2F%20Ubuntu-FCC624?logo=linux)](https://github.com/Rev0nix/VEXYRON/releases)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions)](.github/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/Release-v2.3.7-success?logo=github)](https://github.com/Rev0nix/VEXYRON/releases)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 
-*Unify your Android smartphone and Desktop workstation (Windows, Linux, macOS) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, screen mirroring, ADB bridging, and built-in AI workflows.*
+*Unify your Android smartphone and Desktop workstation (Windows & Linux) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, bi-directional remote terminal with sudo support, and Vex AI remote application launching.*
 
 </div>
 
@@ -19,7 +23,7 @@
 
 ## 📖 Overview
 
-**AetherLink** is a modern, modular ecosystem bridge built to eliminate friction between your mobile device and desktop computer. Designed with a **local-first, privacy-centric architecture**, AetherLink establishes direct peer-to-peer communication over your local network using custom TCP sockets and multicast DNS (`mDNS` / Android `NSD`), while providing an automated **ADB (Android Debug Bridge)** fallback layer when Wi-Fi client isolation is active.
+**VEXYRON** is a modern, modular ecosystem bridge built to eliminate friction between your mobile device and desktop computer. Designed with a **local-first, privacy-centric architecture**, VEXYRON establishes direct peer-to-peer communication over your local network using custom TCP sockets and multicast DNS (`mDNS` / Android `NSD`), while providing an automated **ADB (Android Debug Bridge)** fallback layer when Wi-Fi client isolation is active.
 
 The platform is engineered as a clean monorepo uniting two native clients around a shared multi-crate Rust core:
 * **Desktop Client (`apps/desktop`):** Built with **Rust + Tauri v2 + React + TypeScript + Vite**, delivering ultra-low memory overhead, native OS integration, and a multi-client asynchronous TCP server.
@@ -28,12 +32,31 @@ The platform is engineered as a clean monorepo uniting two native clients around
 
 ---
 
+## 📸 Screenshots & Interface
+
+### 💻 Desktop Client (Windows & Linux)
+| Dashboard & Device Discovery | Settings & System Platform Helpers |
+| :---: | :---: |
+| <img src="docs/screenshots/desktop-dashboard.png" alt="Desktop Dashboard" width="480"/> | <img src="docs/screenshots/desktop-settings.png" alt="Desktop Settings" width="480"/> |
+
+### 📱 Android Mobile Client
+| Home Dashboard | Device Discovery | File Explorer |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/mobile-home.png" alt="Mobile Home Dashboard" width="250"/> | <img src="docs/screenshots/mobile-devices.png" alt="Mobile Devices" width="250"/> | <img src="docs/screenshots/mobile-files.png" alt="Mobile File Explorer" width="250"/> |
+
+| Vex AI Remote App Launcher | Remote Terminal (Sudo Powered) | Settings & Helpers |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/mobile-assistant.png" alt="Vex AI Assistant" width="250"/> | <img src="docs/screenshots/mobile-terminal.png" alt="Remote Terminal" width="250"/> | <img src="docs/screenshots/mobile-settings.png" alt="Mobile Settings" width="250"/> |
+
+---
+
 ## 🆕 Recent Updates & Cross-Platform Tooling
 
-Based on the latest repository updates:
-* **Cross-Platform Quick-Launch Scripts:** Added native desktop launcher scripts for **Windows Batch** (`launch-desktop.bat`), **PowerShell** (`launch-desktop.ps1`), and **Unix/Linux/macOS** (`launch-desktop.sh`).
-* **Expanded CI/CD & Release Automation:** Enhanced GitHub Actions pipelines (`.github/workflows/ci.yml` and `.github/workflows/release.yml`) alongside `deploy-release.sh` for streamlined multi-platform builds and artifact packaging.
-* **Refined Tauri IPC & TCP Server:** Expanded desktop command handlers (`features.rs`) and socket management (`tcp_server.rs`) for smoother device command execution and file operations.
+* **Vex AI Remote App Launcher:** Ask Vex AI on your phone to open applications on your laptop (e.g. *"open brave"*, *"open chrome"*, *"open vscode"*, *"open spotify"*, *"open calculator"*, *"open files"*).
+* **Cross-Platform Remote Terminal:** Control your laptop's terminal directly from your Android phone with non-blocking sudo authentication (`-S -p ""`) and automatic typo tolerance.
+* **Adaptive Soft Keyboard Insets:** Dynamic `WindowInsets.ime` padding ensuring command bars and action chips elevate smoothly above virtual keyboards.
+* **Native In-App Updates:** Windows and Linux desktop clients download and replace older versions in-place without file collisions or duplicate installations.
+* **PolyForm Noncommercial License 1.0.0:** Clear noncommercial open usage licensing for personal research, hobby projects, and educational exploration.
 
 ---
 
@@ -49,31 +72,35 @@ Based on the latest repository updates:
 * **ADB Fallback Bridge:**
   * `crates/device/src/adb.rs` interfaces directly with `adb` to detect USB-connected or wireless-debugging Android devices, forward TCP ports, and maintain connectivity even on restrictive corporate or public networks.
 
-### 📋 2. Universal Clipboard Synchronization
+### 💻 2. Cross-Device Remote Terminal & Sudo Engine
+* **Bi-Directional Shell Execution:** Execute system commands directly on your connected Windows or Linux laptop from your Android phone.
+* **Non-Blocking Sudo Authentication:** Automatically pipes authentication credentials through stdin (`sudo -S -p ""`), avoiding terminal TTY stalling errors.
+* **Typo Correction & Smart Normalization:** Auto-normalizes common command slips (e.g. `shotdown` -> `shutdown`, `rebot` -> `reboot`).
+* **Quick Command Chips:** Instant access to system commands (`ls -la`, `uptime`, `whoami`, `free -h`, `df -h`, `ip a`, `systemctl status`).
+
+### 🤖 3. Vex AI Assistant & Remote Application Launcher
+* **Context-Aware Voice & Text AI:** Interact with Vex AI to control your workspace, query system status, and orchestrate device tasks.
+* **Remote App Launching:** Launch desktop applications by voice or prompt—instantly opens Brave, Chrome, VS Code, Spotify, File Manager, Calculator, or YouTube on your laptop.
+
+### 📋 4. Universal Clipboard Synchronization
 * **Bidirectional Real-Time Sync:** Any text copied on Desktop (`Clipboard.tsx`) or Android (`ClipboardScreen.kt`) is immediately framed and transmitted across the active TCP session.
 * **Deep Android OS Integrations:**
   * **Quick Settings Tile (`ClipboardTileService.kt`):** Push clipboard contents or toggle sync directly from the Android notification shade without opening the app.
-  * **Text Selection Context Menu (`ProcessTextActivity.kt`):** Registers Android's `ACTION_PROCESS_TEXT` intent so you can highlight text in any browser or app and tap *"Send to AetherLink"*.
+  * **Text Selection Context Menu (`ProcessTextActivity.kt`):** Registers Android's `ACTION_PROCESS_TEXT` intent so you can highlight text in any browser or app and tap *"Send to VEXYRON"*.
   * **Background Sync Activity (`ClipboardSyncActivity.kt`):** Handles silent background clipboard capture and dispatch.
   * **Floating Sync Bubble (`FloatingSyncBubbleService.kt`):** An optional overlay widget providing one-tap cross-device clipboard and file actions while multitasking.
 
-### 📁 3. Remote File Explorer & High-Speed TCP Transfer
+### 📁 5. Remote File Explorer & High-Speed TCP Transfer
 * **Desktop File Manager (`FileExplorer.tsx`):** Browse your Android device's internal storage from your desktop with full directory traversal, breadcrumb navigation (`Breadcrumb.tsx`), action toolbars (`FileToolbar.tsx`), list views (`FileList.tsx`, `FileItem.tsx`), and right-click context menus (`FileContextMenu.tsx`).
 * **Dedicated Transfer Screen (`FileTransferScreen.kt`):** Monitor incoming/outgoing transfers and pick files directly from Android.
 * **Chunked Socket Streaming:** Managed by `ConnectionManager.kt` on Android and `tcp_server.rs` / `crates/device/src/file_service.rs` on Rust for reliable binary transfer.
 
-### 🔔 4. Real-Time Notification Mirroring
+### 🔔 6. Real-Time Notification Mirroring
 * **Unified Notification Center:** Android notifications are captured by `NotificationSyncScreen.kt` / `AetherLinkService.kt` and streamed to the desktop `Notifications.tsx` view so you can monitor alerts, messages, and app updates from your workstation.
-
-### 🖥️ 5. Low-Latency Screen Mirroring
-* **Live Device Display Stream:** `ScreenMirroringScreen.kt` pairs with `crates/streaming` to cast your Android screen to your desktop window for presentations, testing, or remote control.
-
-### 🤖 6. Integrated AI Assistant
-* **Context-Aware Cross-Device AI:** `AiAssistantScreen.kt` connects with `crates/ai` to summarize synced clipboard text, draft replies to mirrored notifications, or automate device actions.
 
 ---
 
-## 🏗️ Complete Monorepo Architecture
+## 🏗️ Monorepo Architecture
 
 ```text
 VEXYRON-main/
@@ -91,76 +118,59 @@ VEXYRON-main/
 │   │           ├── AetherLinkApp.kt    # Application entry & DI initialization
 │   │           ├── MainActivity.kt     # Single-activity Compose host
 │   │           ├── core/
-│   │           │   ├── components/     # AetherBadge, AetherButton, AetherCard, AetherHeader
+│   │           │   ├── components/     # Custom UI primitives & buttons
 │   │           │   ├── constants/      # AppConstants, NetworkConstants
-│   │           │   ├── designsystem/   # Custom Color, Theme, and Typography tokens
+│   │           │   ├── designsystem/   # Color, Theme, and Typography tokens
 │   │           │   └── utils/          # QrCodeScannerHelper
-│   │           ├── domain/
-│   │           │   ├── model/          # Device, DeviceState
-│   │           │   ├── repository/     # DiscoveryRepository & DiscoveryRepositoryImpl
-│   │           │   └── usecase/        # DiscoverDevicesUseCase
+│   │           ├── domain/             # Device & Discovery domain models
 │   │           ├── feature/
-│   │           │   ├── assistant/      # AiAssistantScreen
-│   │           │   ├── clipboard/      # ClipboardScreen, ClipboardSyncActivity, ProcessTextActivity
-│   │           │   ├── devices/        # DevicesScreen
-│   │           │   ├── files/          # FileTransferScreen
+│   │           │   ├── assistant/      # Vex AI Assistant & remote app launcher
+│   │           │   ├── terminal/       # Remote Terminal screen & command executor
+│   │           │   ├── clipboard/      # ClipboardScreen & sync activities
+│   │           │   ├── devices/        # DevicesScreen & pairing status
+│   │           │   ├── files/          # FileTransferScreen & storage explorer
 │   │           │   ├── home/           # HomeScreen dashboard
-│   │           │   ├── mirroring/      # ScreenMirroringScreen
 │   │           │   ├── notifications/  # NotificationSyncScreen
 │   │           │   ├── onboarding/     # Permission onboarding flow
 │   │           │   ├── pairing/        # QR & manual PairingScreen
-│   │           │   ├── settings/       # SettingsScreen
-│   │           │   └── splash/         # SplashScreen
-│   │           ├── protocol/           # Wire schemas: DeviceInfo, Message, MessageType, PairPayloads
-│   │           ├── service/
-│   │           │   ├── AetherLinkService.kt         # Persistent foreground connection service
-│   │           │   ├── ClipboardTileService.kt      # Android Quick Settings Tile
-│   │           │   ├── DiscoveryService.kt          # Background NSD service
-│   │           │   ├── FloatingSyncBubbleService.kt # System overlay bubble
-│   │           │   ├── discovery/                   # NsdDiscoveryManage
-│   │           │   └── network/                     # ConnectionManager, TcpClient
-│   │           ├── ui/
-│   │           │   ├── components/     # StatusCard
-│   │           │   ├── navigation/     # AppNavigation, BottomBar, Screen routes
-│   │           │   └── theme/          # Material 3 theme wrappers
-│   │           └── viewmodel/          # HomeViewModel state holder
+│   │           │   └── settings/       # SettingsScreen & Linux helpers
+│   │           ├── protocol/           # Wire schemas: DeviceInfo, Message, PairPayloads
+│   │           ├── service/            # AetherLinkService, ClipboardTileService, DiscoveryService
+│   │           └── ui/navigation/      # AppNavigation, BottomBar, Screen routes
 │   └── desktop/                        # Cross-Platform Desktop Client (Tauri + React)
 │       ├── package.json                # Frontend dependencies & scripts
 │       ├── vite.config.ts              # Vite bundler config
 │       ├── src/                        # React + TypeScript UI
-│       │   ├── components/             # DeviceCard, PairingModal, Sidebar, TopBar, device/*, file/*
-│       │   ├── layouts/                # MainLayout shell
-│       │   ├── pages/                  # Dashboard, FileExplorer, Clipboard, Notifications, Devices, DeviceDetails, Settings
-│       │   ├── router/                 # Client-side routing
+│       │   ├── components/             # DeviceCard, PairingModal, Sidebar, TopBar
+│       │   ├── pages/                  # Dashboard, FileExplorer, Clipboard, Terminal, Settings
 │       │   ├── services/tauri.ts       # Typed Tauri IPC invoke wrappers
-│       │   ├── store/appStore.ts       # Global reactive application state
-│       │   └── types/                  # TypeScript interfaces (device.ts, file.ts)
+│       │   └── store/appStore.ts       # Global reactive application state
 │       └── src-tauri/                  # Tauri Rust Native Backend
 │           ├── Cargo.toml              # Tauri backend dependencies
 │           ├── tauri.conf.json         # Window, bundle & capability configuration
-│           ├── capabilities/           # Security capability permissions (default.json)
 │           └── src/
 │               ├── main.rs & lib.rs    # Tauri app builder & plugin registration
-│               ├── commands/           # IPC handlers: device.rs, features.rs, pairing.rs
+│               ├── commands/           # IPC handlers: features.rs, pairing.rs
 │               └── network/            # discovery.rs & multi-client tcp_server.rs
-├── crates/                             # Modular Rust Workspace Crates
+├── crates/                             # Modular Rust Workspace Crates (11 Crates)
 │   ├── ai/                             # AI processing & prompt orchestration
-│   ├── common/                         # Shared domain models (device, connection, battery, constants, error)
-│   ├── core/                           # App lifecycle, config, event bus, device/plugin registry, state
-│   ├── crypto/                         # Encryption, key exchange & verification primitives
-│   ├── database/                       # Local persistence & history storage
-│   ├── device/                         # DeviceManager, ADB bridge, pairing logic, heartbeat & file_service
-│   ├── network/                        # Low-level transport & socket traits
+│   ├── common/                         # Shared domain models & constants
+│   ├── core/                           # App lifecycle, event bus, device registry
+│   ├── crypto/                         # Encryption, key exchange primitives
+│   ├── database/                       # Local persistence storage
+│   ├── device/                         # DeviceManager, ADB bridge, pairing logic
+│   ├── network/                        # Transport & socket traits
 │   ├── plugin/                         # Extensible plugin architecture
-│   ├── protocol/                       # Cross-platform binary/JSON message framing
+│   ├── protocol/                       # Cross-platform message framing
 │   ├── streaming/                      # Screen & media frame streaming
-│   └── sync/                           # State & clipboard synchronization engine
-├── aetherlink.desktop                  # Linux XDG Desktop Entry
-├── Cargo.toml                          # Root Cargo Workspace definition
+│   └── sync/                           # Clipboard & state synchronization engine
+├── docs/screenshots/                   # UI screenshots (desktop & mobile)
 ├── deploy-release.sh                   # Automated multi-target release build script
 ├── launch-desktop.bat                  # Windows Command Prompt quick-launcher
 ├── launch-desktop.ps1                  # Windows PowerShell quick-launcher
-└── launch-desktop.sh                   # Linux/macOS Bash quick-launcher
+├── launch-desktop.sh                   # Linux/macOS Bash quick-launcher
+├── LICENSE                             # PolyForm Noncommercial License 1.0.0
+└── README.md
 ```
 
 ---
@@ -169,28 +179,11 @@ VEXYRON-main/
 
 | Subsystem | Technologies & Frameworks |
 | :--- | :--- |
-| **Desktop Shell & Backend** | Rust (2021 Edition), Tauri, Tokio Async Runtime, Custom TCP Server (`tcp_server.rs`) |
-| **Desktop Frontend** | React, TypeScript, Vite, Tailwind CSS, Custom Store (`appStore.ts`), Typed IPC (`tauri.ts`) |
-| **Android Application** | Kotlin, Jetpack Compose, Material 3, Custom `Aether` Design System, Android NSD, Foreground Services |
-| **Core Engine & Protocol** | Cargo Workspace (`11` modular crates), Custom Wire Protocol (`crates/protocol`), ADB CLI Bridge (`adb.rs`) |
-| **CI/CD & Distribution** | GitHub Actions (`ci.yml`, `release.yml`), Gradle Kotlin DSL (`libs.versions.toml`), Cross-platform launch scripts |
-
----
-
-## 🔌 Communication & Protocol Lifecycle
-
-AetherLink operates over a deterministic 4-stage connection pipeline:
-
-1. **Peer Discovery (`mDNS` / `NSD`):**
-   * Desktop (`network/discovery.rs`) and Android (`NsdDiscoveryManage.kt`) advertise their device metadata (`DeviceInfo`) on the local subnet.
-2. **Session Establishment (`TCP`):**
-   * Desktop runs a persistent async TCP listener (`network/tcp_server.rs`).
-   * Android initiates connections via `TcpClient.kt` and manages reconnection/session state inside `ConnectionManager.kt` (~28 KB core networking engine).
-3. **Pairing & Verification:**
-   * Users scan the QR code rendered by `PairingModal.tsx` using `QrCodeScannerHelper.kt`, exchanging `PairPayloads` validated by `crates/device/src/pairing.rs`.
-4. **Multiplexed Feature Framing:**
-   * All clipboard updates (`MessageType`), file directory queries, binary file transfers, and notification payloads are serialized via `crates/protocol/src/lib.rs` and dispatched to Tauri IPC commands (`commands/features.rs`).
-   * **ADB Fallback:** If local Wi-Fi blocks peer-to-peer traffic, `crates/device/src/adb.rs` detects USB/wireless ADB devices and tunnels traffic seamlessly.
+| **Desktop Shell & Backend** | Rust (2021 Edition), Tauri v2, Tokio Async Runtime, Custom TCP Server (`tcp_server.rs`) |
+| **Desktop Frontend** | React, TypeScript, Vite, Tailwind CSS, Custom Reactive Store (`appStore.ts`), Typed IPC (`tauri.ts`) |
+| **Android Application** | Kotlin, Jetpack Compose, Material 3, Custom Design System, Android NSD, Foreground Services |
+| **Core Engine & Protocol** | Cargo Workspace (`11` modular crates), Custom Wire Protocol (`crates/protocol`), ADB Bridge (`adb.rs`) |
+| **CI/CD & Packaging** | GitHub Actions (`ci.yml`, `release.yml`), Gradle Kotlin DSL (`libs.versions.toml`), `deploy-release.sh` |
 
 ---
 
@@ -210,11 +203,11 @@ AetherLink operates over a deterministic 4-stage connection pipeline:
 
 ---
 
-### 1. Clone & Verify the Rust Workspace
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/AetherLink.git
-cd AetherLink
+git clone https://github.com/Rev0nix/VEXYRON.git
+cd VEXYRON
 
 # Build all 11 workspace crates
 cargo build --workspace
@@ -224,38 +217,15 @@ cargo build --workspace
 
 ### 2. Launch the Desktop Client
 
-#### Option A: Running from Release Bundles
-
-* **Windows:**
-  If you downloaded `AetherLink-windows-x64.zip`:
-  1. Extract the zip folder.
-  2. Double-click `launch-desktop.bat` (or right-click `launch-desktop.ps1` -> Run with PowerShell).
-     > **💡 Windows Smart App Control / SmartScreen Note:** Windows 11 Smart App Control blocks unsigned `.exe` files downloaded from web browsers via the NTFS "Mark of the Web" (`Zone.Identifier`). `launch-desktop.bat` automatically unblocks extracted files and launches `AetherLink.exe` safely.
-     >
-     > Alternatively, right-click `AetherLink.exe` (or the `.zip` archive before extraction) -> **Properties** -> check **Unblock** at the bottom -> click **Apply**, or run PowerShell:
-     > ```powershell
-     > Unblock-File -Path .\AetherLink.exe
-     > ```
-* **Linux:**
-  If you downloaded `AetherLink-linux-x86_64.tar.gz`:
-  1. Extract the tarball:
-     ```bash
-     tar -xzvf AetherLink-linux-x86_64.tar.gz
-     cd aetherlink-desktop
-     ```
-  2. Launch directly:
-     ```bash
-     ./launch-desktop.sh
-     ```
-  3. (Optional) Install the desktop shortcut into your application menu:
-     ```bash
-     ./install-desktop.sh
-     ```
+#### Option A: Running from Prebuilt Release Packages
+* **Windows:** Download [`VEXYRON-Windows-Setup.exe`](https://github.com/Rev0nix/VEXYRON/releases/latest) and run the installer. Installs per-user and supports seamless in-app updates.
+* **Linux (Ubuntu / Debian):** Download [`VEXYRON-Linux.deb`](https://github.com/Rev0nix/VEXYRON/releases/latest) and install via terminal:
+  ```bash
+  sudo apt install ./VEXYRON-Linux.deb
+  ```
 
 #### Option B: Running from Source / Development Mode
-
 You can use the included cross-platform quick-launch scripts from the repository root:
-
 * **Windows (Command Prompt):**
   ```cmd
   launch-desktop.bat
@@ -270,13 +240,6 @@ You can use the included cross-platform quick-launch scripts from the repository
   ./launch-desktop.sh
   ```
 
-Or run manually via `npm`:
-```bash
-cd apps/desktop
-npm install
-npm run tauri dev
-```
-
 ---
 
 ### 3. Build & Install the Android App
@@ -284,33 +247,14 @@ npm run tauri dev
 ```bash
 cd apps/android
 
-# Build the debug APK
+# Build the release or debug APK
 ./gradlew assembleDebug
 
 # Install onto a connected Android device via ADB
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
----
-
-### 4. Linux Desktop Launcher Integration
-
-To register AetherLink in your Linux desktop environment's application menu:
-```bash
-cp aetherlink.desktop ~/.local/share/applications/
-# Edit ~/.local/share/applications/aetherlink.desktop to point Exec= and Icon= to your binary location
-```
-
----
-
-## 🧩 Developer & Architecture Notes
-
-* **Crate Modularity:** Core desktop networking (`tcp_server.rs`, `features.rs`), ADB device management (`crates/device/src/adb.rs`), pairing (`pairing.rs`), and protocol framing (`crates/protocol`) are actively implemented, while auxiliary crates (`ai`, `crypto`, `database`, `network`, `plugin`, `streaming`, `sync`) provide clean workspace boundaries for expanding features without coupling to UI layers.
-* **Required Android Permissions:** On first launch, use the built-in `OnboardingScreen` to grant:
-  * **Notification Access** (for Notification Mirroring)
-  * **Display Over Other Apps** (for `FloatingSyncBubbleService`)
-  * **Nearby Devices / Local Network & Camera** (for NSD Discovery and QR Pairing)
-* **Building Production Releases:** Use `./deploy-release.sh` locally or push a version tag to trigger `.github/workflows/release.yml` for automated multi-OS packaging.
+Or download the pre-signed release package directly from [GitHub Releases](https://github.com/Rev0nix/VEXYRON/releases/latest).
 
 ---
 
@@ -325,4 +269,11 @@ cp aetherlink.desktop ~/.local/share/applications/
 
 ## 📄 License
 
-This project is governed by the terms in the root [`LICENSE`](LICENSE) file. *(Reminder: Add your chosen open-source license text, such as MIT or Apache-2.0, to `LICENSE` before publishing.)*
+This project is licensed under the **PolyForm Noncommercial License 1.0.0**.
+
+### Summary of Terms:
+* **Permitted Noncommercial Use:** You may freely run, test, experiment with, modify, and distribute this software for any noncommercial purpose—including personal study, research, hobby projects, private entertainment, and use by educational or noncommercial organizations.
+* **Commercial Restrictions:** You may not exercise any rights granted by this license for commercial purposes (including selling, commercial hosting, or monetized distribution) without obtaining a separate commercial license from the licensors.
+* **Attribution & Notices:** All distributions of this software or modified works must retain the copyright notices and a copy of the license terms.
+
+For the full legal terms and conditions, please read the complete [`LICENSE`](LICENSE) file.
