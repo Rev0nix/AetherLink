@@ -15,6 +15,11 @@
 
 *Unify your Android smartphone and Desktop workstation (Windows & Linux) with zero-config mDNS/NSD discovery, QR handshake pairing, real-time clipboard & notification sync, remote file exploration, bi-directional remote terminal with sudo support, and Vex AI remote application launching.*
 
+### Intelligent Cross-Platform Device Connectivity
+
+## Official Repository
+https://github.com/Rev0nix/VEXYRON
+
 </div>
 
 ---
